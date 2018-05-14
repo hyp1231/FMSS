@@ -65,7 +65,7 @@ Have a good time~ :)
 
 > PS:
 > position of index block - 0xff if it's a file inode\\
->                           BLK_No. if it's a directory inode
+                            BLK_No. if it's a directory inode
 
 ### File name index
 
