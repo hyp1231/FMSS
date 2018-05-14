@@ -61,7 +61,7 @@ Have a good time~ :)
 |create time|16B|10 - 25|
 |modify time|16B|26 - 41|
 |data block number|8 * 2B|42 - 57|
-|none|966B|58 - 1023|
+|none|6B|58 - 63|
 
 > PS:
 > position of index block - 0xff if it's a file inode
