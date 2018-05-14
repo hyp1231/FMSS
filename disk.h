@@ -1,12 +1,18 @@
 #pragma once
 
+#include <string>
+#include <fstream>
+#include <iostream>
+using namespace std;
+
 class Disk {
 private:
-
+	const string disk_file;
+	int BLKsize;		// size of a single block
 public:
 	Disk();
 	~Disk();
 
-	void Getblk(char buf[], int blk_num);
-	void Putblk(char buf[], int blk_num);
+	bool Getblk(char buf[], int blk_num);
+	bool Putblk(char buf[], int blk_num);
 };
