@@ -4,7 +4,7 @@
  *	A simulation of Unix's file management system.
  *	Developed by "Prime Luo" and his buddy "Yupeng Hou"
  *
- *	Author1: Prime Luo (Sijie Luo)
+ *	Author1: Sijie Luo
  * 	ID:		 2016202186
  *
  *	Author2: Yupeng Hou
@@ -21,7 +21,7 @@
 using namespace std;
 
 enum enum_opts {
-	undefined_opt, opt0, opt1
+	undefined_opt, _help, _exit, _create, _delete
 };
 
 static map<string, enum_opts> string_to_enum;
@@ -39,12 +39,16 @@ bool exec_opt(FileSystem& S, vector<string>& opt) {
 	if(opt.empty()) { return true; }
 	bool flag = true;
 	switch(string_to_enum[opt[0]]) {
-		case opt0:			// help
+		case _help:			// help
 			S.Help(); break;
-		case opt1:			// exit
+		case _exit:			// exit
 			flag = false; break;
+        case _create:       // touch
+            // create a new file
+        case _delete:       // rm
+            // delete a file
 		case undefined_opt:	// unknowned
-			cout << "Unknowned option... ╮(￣▽￣"")╭" << endl; break;
+			cout << "Unknown option... ╮(￣▽￣"")╭" << endl; break;
 		default: break;
 	}
 	return flag;
@@ -61,8 +65,10 @@ void Menu() {				// get opts and execute them
 }
 
 void initialization() {
-	string_to_enum["help"] = opt0;
-	string_to_enum["exit"] = opt1;
+	string_to_enum["help"] = _help;
+	string_to_enum["exit"] = _exit;
+    string_to_enum["touch"] = _create;
+    string_to_enum["rm"] = _delete;
 }
 
 int main() {
