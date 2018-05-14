@@ -24,3 +24,5 @@ If you need help about how to use it, just input "help" to get what you need.
 
 Have a good time~ :)
 
+## Structure
+
