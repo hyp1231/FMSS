@@ -58,13 +58,14 @@ Have a good time~ :)
 |:-:|:-:|:-:|
 |position of index block|2B|0 - 1|
 |file name|8B|2 - 9|
-|create time|10B|10 - 19|
-|modify time|10B|20 - 29|
-|data block number|8 * 2B|30 - 45|
-|none|978B|46 - 1023|
+|create time|16B|10 - 25|
+|modify time|16B|26 - 41|
+|data block number|8 * 2B|42 - 57|
+|none|966B|58 - 1023|
 
 > PS:
-> position of index block, 0xff if file inode, other if table of Contents
+> position of index block - 0xff if it's a file inode
+>                           BLK_No. if it's a directory inode
 
 ### File name index
 
@@ -73,7 +74,7 @@ Have a good time~ :)
 |content|size|range|
 |:-:|:-:|:-:|
 |file name|8B|0 - 7|
-|flag|2B|8 - 9|
+|valid|2B|8 - 9|
 |inode number|2B|10 - 11|
 
 > Repetively 80 times
