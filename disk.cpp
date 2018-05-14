@@ -19,7 +19,7 @@ Disk::~Disk() {
 bool Disk::Getblk(char buf[], int blk_num) {
 	ifstream ifile(disk_file);
 	if(!ifile) {	// cannot open file
-		cout << "Not found diskfile... (´Д` )" << endl;
+		cout << "Diskfile not found... (´Д` )" << endl;
 		return false;
 	}
 	ifile.seekg(ifile.beg + BLKsize * blk_num);
@@ -33,7 +33,7 @@ bool Disk::Getblk(char buf[], int blk_num) {
 bool Disk::Putblk(char buf[], int blk_num) {
 	ofstream ofile(disk_file, ios::out | ios::in);
 	if(!ofile) {	// cannot open file
-		cout << "Not found diskfile... (´Д` )" << endl;
+		cout << "Diskfile not found... (´Д` )" << endl;
 		return false;
 	}
 	ofile.seekp(ofile.beg + BLKsize * blk_num);
