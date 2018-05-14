@@ -74,7 +74,7 @@ Have a good time~ :)
 |:-:|:-:|:-:|
 |file name|8B|0 - 7|
 |flag|2B|8 - 9|
-|address|2B|10 - 11|
+|inode number|2B|10 - 11|
 
 > Repetively 80 times
 
