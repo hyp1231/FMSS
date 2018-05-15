@@ -34,9 +34,8 @@ Have a good time~ :)
 |:-:|:-:|:-:|
 |Super block + Inode bitmap + Data block bitmap|1|0|
 |Inode table|5|1 - 5|
-|File name index|80|6 - 85|
-|Data block|640|86 - 725|
-|None|298|726 - 1023|
+|Data block|640|6 - 645|
+|None|378|646 - 1023|
 
 ### Super block + Inode bitmap + Data block bitmap (1 block)
 
@@ -56,19 +55,17 @@ Have a good time~ :)
 
 |content|size|range|
 |:-:|:-:|:-:|
-|position of index block|2B|0 - 1|
+|flag|2B|0 - 1|
 |file name|8B|2 - 9|
 |create time|16B|10 - 25|
 |modify time|16B|26 - 41|
 |data block number|8 * 2B|42 - 57|
 |none|6B|58 - 63|
 
-> PS:
-> position of index block - 0xff if it's a file inode
+> PS:<br>
+> $flag = \begin{cases} 0 & inode\ of\ data\ file\\ 1 & inode\ of\ table\ of\ contents\end{cases}$
 
-> BLK_No. of file name index table if it's a directory inode
-
-### File name index
+### Data Block（if is table of contents）(1 block)
 
 1024B totally
 
