@@ -84,7 +84,7 @@ bool FileSystem::CreateFile(const string &filename) {
     /* 
         step 1: get to the right directory
     */
-    char blk[1024], dir[1024], dir_map[1024];
+    char blk[BLKsize], dir[BLKsize], dir_map[BLKsize];
     getDirInfo(dir, dir_map, 0);                       // get root directory and its map block
 
     int dir_token_pos = 0;
