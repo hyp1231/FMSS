@@ -43,3 +43,7 @@ bool Disk::Putblk(char buf[], int blk_num) {
 	ofile.close();
 	return true;
 }
+
+int Disk::Get_BLKsize() {
+	return BLKsize;
+}

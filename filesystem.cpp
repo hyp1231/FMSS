@@ -1,6 +1,6 @@
 #include "filesystem.h"
 
-FileSystem::FileSystem() {
+FileSystem::FileSystem() : D(), BLKsize(D.Get_BLKsize()) {
 	cout << "Welcome to use our system!" << endl;
 	cout << "If you need help, just type \"help\", and hit [enter]." << endl;
 	cout << "Input \"exit\" to exit the ststem." << endl;
@@ -8,8 +8,6 @@ FileSystem::FileSystem() {
 
     // set BLK_No. of root directory to 0 
     // (the implementation of diskdata has done this work)
-
-
 }
 
 FileSystem::~FileSystem() {
@@ -40,7 +38,7 @@ void getDirInfo(char dir[], char dir_map[], int blk_num) {
 bool byteEQUstring(const string& str, char buf[], int begin, int end) {
     if (str.length() != end - begin)
         return false;
-    for (int i = 0; i < str.lenth(); i++) {
+    for (int i = 0; i < str.length(); i++) {
         if (str[i] != buf[beg + i])
             return false;
     }

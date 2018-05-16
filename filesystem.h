@@ -6,6 +6,7 @@ using namespace std;
 class FileSystem {
 private:
 	Disk D;			// disk
+	const int BLKsize;
 public:
 	FileSystem();
 	~FileSystem();
