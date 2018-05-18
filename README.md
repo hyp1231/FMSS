@@ -62,16 +62,16 @@ Have a good time~ :)
 |data block number|8 * 2B|42 - 57|
 |none|6B|58 - 63|
 
-> PS: <br>flag: 0 if inode points to data file, 1 if inode points to table of contents
+> PS: <br>flag: 0 if inode points to data file, 1 if inode points to directories
 
-### Data Block（if is table of contents）(1 block)
+### Data Block（if is directory）(1 block)
 
 1024B totally
 
 |content|size|range|
 |:-:|:-:|:-:|
 |file name|8B|0 - 7|
-|valid|2B|8 - 9|
+|used|2B|8 - 9|
 |inode number|2B|10 - 11|
 
 > Repetively 80 times

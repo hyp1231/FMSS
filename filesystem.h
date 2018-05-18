@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <ctime>
 #include "disk.h"
 using namespace std;
 
@@ -20,13 +21,17 @@ private:
 	char inode_bitmap[10];
 	char data_block_bitmap[80];
 
-    int Get_actual_dataBLKnumber(int n);
-    int Get_actual_inodeBLKnumber(int n);
+    inline int Get_actual_dataBLKnumber(int n);
+    inline int Get_actual_inodeBLKnumber(int n);
     int Get_dir_inodeNum_from_path(vector<string>& path);
     int Get_file_inodeNum_from_dir(int dir_inodeNum, const string& filename);
     bool Get_inode_from_inodeNum(char buf[], int inodeNum);
     int Find_empty_inodeNum();
     int Find_empty_dataBLKNum();
+    void Fill_inode_bitmap(int inodeNum, bool flag);
+    void Fill_data_block_bitmap(int blockNum, bool flag);
+    void Save_superBLK();
+
 public:
 	FileSystem();
 	~FileSystem();
