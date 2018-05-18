@@ -35,12 +35,12 @@ int main() {
 	// first inode
 	short num = 1;
 	ofile.write((char*)&num, sizeof(num));
-	for(int i = 0; i < 7; ++i) {
-		ofile.write((char*)&tmp, sizeof(tmp));
-	}
 	tmp = '/';
 	ofile.write((char*)&tmp, sizeof(tmp));
 	tmp = 0;
+	for(int i = 0; i < 7; ++i) {
+		ofile.write((char*)&tmp, sizeof(tmp));
+	}
 	
 	// rest of inode table
 	for(int i = 0; i < 5 * 1024 - 10; ++i) {
@@ -48,16 +48,16 @@ int main() {
 	}
 
 	// first data block
-	for(int i = 0; i < 7; ++i) {
-		ofile.write((char*)&tmp, sizeof(tmp));
-	}
 	tmp = '.';
 	ofile.write((char*)&tmp, sizeof(tmp));
 	tmp = 0;
+	for(int i = 0; i < 7; ++i) {
+		ofile.write((char*)&tmp, sizeof(tmp));
+	}
 
 	ofile.write((char*)&num, sizeof(num));
 
-	for(int i = 0; i < 6 + 2; ++i) {
+	for(int i = 0; i < 2; ++i) {
 		ofile.write((char*)&tmp, sizeof(tmp));
 	}
 	tmp = '.';
@@ -65,6 +65,9 @@ int main() {
 		ofile.write((char*)&tmp, sizeof(tmp));
 	}
 	tmp = 0;
+	for(int i = 0; i < 6; ++i) {
+		ofile.write((char*)&tmp, sizeof(tmp));
+	}
 
 	ofile.write((char*)&num, sizeof(num));
 

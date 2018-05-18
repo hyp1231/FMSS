@@ -44,7 +44,7 @@ bool exec_opt(FileSystem& S, vector<string>& opt) {
 		case _exit:			// exit
 			flag = false; break;
         case _create:       // touch
-            cin >> str; S.CreateFile(str); break;
+            S.CreateFile(opt[1]); break;
         case _delete:       // rm
             // delete a file
 		case undefined_opt:	// unknowned
