@@ -18,6 +18,7 @@ private:
     int Get_actual_dataBLKnumber(int n);
     int Get_dir_inodeNum_from_path(vector<string>& path);
     int Get_file_inodeNum_from_dir(int dir_inodeNum, const string& filename);
+    bool Get_inode_from_inodeNum(char buf[], int inodeNum);
 public:
 	FileSystem();
 	~FileSystem();
