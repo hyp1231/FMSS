@@ -1,7 +1,8 @@
 CXX = g++
 CXXFLAGS = -g -std=c++11
 
-all :main clean
+all : clean gen	main
+	./gen
 
 main: disk.o filesystem.o main.o
 	$(CXX) $(CXXFLAGS) $^ -o $@
@@ -14,4 +15,4 @@ gen:
 
 clean:
 	rm -f *.o
-	rm -rf *.dSYM/
+	rm -rf *.dSYM/ gen main diskdata

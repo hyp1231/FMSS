@@ -197,11 +197,11 @@ int FileSystem::Get_file_inodeNum_from_dir(int dir_inodeNum, const string& filen
 
 	for(int i = 0; i < BLKsize; i += 12) {
 		// check if filename EQU
-		if(byteEQUstring(buf + i, 0, (int)filename.size(), filename)) {
+		if(byteEQUstring(buf, i, i + (int)filename.size(), filename)) {
 			// check if is used
-			if(byte2int(buf + i, 8, 10) == 1) {
+			if(byte2int(buf, i + 8, i + 10) == 1) {
 				// return inodeNum
-				return byte2int(buf + i, 10, 12);
+				return byte2int(buf, i + 10, i + 12);
 			}
 		}
 	}
@@ -361,15 +361,15 @@ bool FileSystem::CreateFile(const string &filepath) {
     Get_inode_from_inodeNum(inode_buf, dir_inodeNum);
 
     // modify directory data block
-    D.Getblk(buf, byte2int(inode_buf, 42, 44));
+    D.Getblk(buf, Get_actual_dataBLKnumber(byte2int(inode_buf, 42, 44)));
     for(int i = 0; i < BLKsize; i += 12) {
     	// find used = 0
-    	if(byte2int(buf + i, 8, 10) == 0) {
+    	if(byte2int(buf, i + 8, i + 10) == 0) {
     		// set used = 1;
-    		Fill_byte_by_num(buf + i, 8, 10, 1);
+    		Fill_byte_by_num(buf, i + 8, i + 10, 1);
 
     		// set filename
-    		Fill_byte_by_str(buf + i, 0, (int)filename.size(), filename);
+    		Fill_byte_by_str(buf, i, i + (int)filename.size(), filename);
 
     		// zero end of str
     		if((int)filename.size() < 8) {
@@ -377,12 +377,12 @@ bool FileSystem::CreateFile(const string &filepath) {
     		}
 
     		// set next inodeNum
-    		Fill_byte_by_num(buf + i, 10, 12, next_inodeNum);
+    		Fill_byte_by_num(buf, i + 10, i + 12, next_inodeNum);
 
     		break;
     	} 
     }
-    D.Putblk(buf, byte2int(inode_buf, 42, 44));
+    D.Putblk(buf, Get_actual_dataBLKnumber(byte2int(inode_buf, 42, 44)));
 
     /*
     	step 6: initialize the inode and the first data block ( set the first block's first byte = 0xFF(EOF) )
@@ -394,11 +394,11 @@ bool FileSystem::CreateFile(const string &filepath) {
 
     string curTime = getTime();
     // set flag
-    Fill_byte_by_num(buf + st, 0, 2, 0);
-    Fill_byte_by_str(buf + st, 2, 10, filename);
-    Fill_byte_by_str(buf + st, 10, (int)curTime.size() + 10, curTime);
-    Fill_byte_by_str(buf + st, 26, (int)curTime.size() + 26, curTime);
-    Fill_byte_by_num(buf + st, 42, 44, next_dataBLKNum);
+    Fill_byte_by_num(buf, st, st + 2, 0);
+    Fill_byte_by_str(buf, st + 2, st + 10, filename);
+    Fill_byte_by_str(buf, st + 10, st + (int)curTime.size() + 10, curTime);
+    Fill_byte_by_str(buf, st + 26, st + (int)curTime.size() + 26, curTime);
+    Fill_byte_by_num(buf, st + 42, st + 44, next_dataBLKNum);
 
     D.Putblk(buf, Get_actual_inodeBLKnumber(next_inodeNum));
 
