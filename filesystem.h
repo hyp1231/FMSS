@@ -13,6 +13,7 @@ private:
 	Disk D;						// disk
 	int root_dir_inodeNum;		// inodeNum of root dir
 	int cur_dir_inodeNum;		// inodeNum of cur dir
+	vector<string> cur_path;
 
 	/*
 		bitmap: count from low to high, 0 - 31
@@ -39,4 +40,5 @@ public:
     bool CreateFile(const string &filepath);
     //bool DeleteFile(const string &filepath);
     int Get_cur_dir_inodeNum();
+    void Print_cur_path();
 };

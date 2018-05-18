@@ -115,6 +115,8 @@ FileSystem::FileSystem() : D(), BLKsize(1024) {
     for(int i = 13; i <= 92; ++i) {
         data_block_bitmap[i - 13] = buf[i];
     }
+
+    cur_path.push_back("/");
 }
 
 FileSystem::~FileSystem() {
@@ -419,4 +421,13 @@ bool FileSystem::CreateFile(const string &filepath) {
 
 int FileSystem::Get_cur_dir_inodeNum() {
     return cur_dir_inodeNum;
+}
+
+void FileSystem::Print_cur_path() {
+	for(int i = 0; i < (int)cur_path.size(); ++i) {
+		if(i != 0 && i != (int)cur_path.size() - 1) {
+			cout << "/";
+		}
+		cout << cur_path[i];
+	}
 }

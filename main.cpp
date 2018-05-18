@@ -58,7 +58,9 @@ void Menu() {				// get opts and execute them
 	FileSystem S;
 	vector<string> opt;
 	do {
-		cout << ">>> ";
+		cout << "[";
+		S.Print_cur_path();
+		cout << "]>>> ";
 		opt.clear();
 		get_opt(opt);
 	} while(exec_opt(S, opt));
