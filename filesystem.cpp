@@ -65,6 +65,27 @@ bool Decomposition_path(string ori_path, vector<string>& path) {
     return true;
 }
 
+void Fill_byte_by_num(char buf[], int begin, int end, int num) {
+	for(int i = begin; i < end; ++i) {
+		buf[i] = num % 256;
+		num /= 256;
+	}
+}
+
+void Fill_byte_by_str(char buf[], int begin, int end, const string& str) {
+	for(int i = begin; i < end; ++i) {
+		buf[i] = str[i];
+	}
+}
+
+string getTime() {
+    time_t timep;
+    time (&timep);
+    char tmp[64];
+    strftime(tmp, sizeof(tmp), "%Y-%m-%d %H:%M",localtime(&timep) );
+    return tmp;
+}
+
 /*
     ------------------- End of Tool Functions -----------------
 */
@@ -108,12 +129,12 @@ void FileSystem::Help() {
 }
 
 // count from zero
-int FileSystem::Get_actual_dataBLKnumber(int n) {
-    return n + 86;
+inline int FileSystem::Get_actual_dataBLKnumber(int n) {
+    return n + 6;
 }
 
 // count from zero
-int FileSystem::Get_actual_inodeBLKnumber(int n) {
+inline int FileSystem::Get_actual_inodeBLKnumber(int n) {
 	return 1 + n / 16;
 }
 
@@ -172,10 +193,10 @@ int FileSystem::Get_file_inodeNum_from_dir(int dir_inodeNum, const string& filen
 	// get the directory data block
 	D.Getblk(buf, byte2int(inode_buf, 42, 44));
 
-	for(int i = 0; i < 1024; i += 12) {
+	for(int i = 0; i < BLKsize; i += 12) {
 		// check if filename EQU
 		if(byteEQUstring(buf + i, 0, 8, filename)) {
-			// check if is valid
+			// check if is used
 			if(byte2int(buf + i, 8, 10) == 1) {
 				// return inodeNum
 				return byte2int(buf + i, 10, 12);
@@ -238,6 +259,39 @@ int FileSystem::Find_empty_dataBLKNum() {
 	return -1;
 }
 
+void FileSystem::Fill_inode_bitmap(int inodeNum, bool flag) {
+	if(flag) {
+		inode_bitmap[inodeNum / 10] |= (1 << (inodeNum % 10));
+	} else {
+		inode_bitmap[inodeNum / 10] &= ~(1 << (inodeNum % 10));
+	}
+}
+
+void FileSystem::Fill_data_block_bitmap(int blockNum, bool flag) {
+	if(flag) {
+		data_block_bitmap[blockNum / 80] |= (1 << (blockNum % 80));
+	} else {
+		data_block_bitmap[blockNum / 80] &= ~(1 << (blockNum % 80));
+	}
+}
+
+void FileSystem::Save_superBLK() {
+	char buf[BLKsize];
+	D.Getblk(buf, 0);
+
+	// save inode bitmap
+    for(int i = 3; i <= 12; ++i) {
+        buf[i] = inode_bitmap[i - 3];
+    }
+
+    // save data block bitmap
+    for(int i = 13; i <= 92; ++i) {
+        buf[i] = data_block_bitmap[i - 13];
+    }
+
+    D.Putblk(buf, 0);
+}
+
 // return false if cannot create file
 bool FileSystem::CreateFile(const string &filepath) {
     /* 
@@ -253,12 +307,19 @@ bool FileSystem::CreateFile(const string &filepath) {
 
     filename = path[path.size() - 1];
     path.pop_back();
+    if((int)filename.size() > 8) {
+    	cout << "[Error] filename is too long" << endl;
+    	return false;
+    }
 
     if(path.empty()) {
     	cout << "[Error] Empty path!" << endl;
     	return false;
     }
 
+    /*
+    	further plan: mkdir
+    */
     int dir_inodeNum = Get_dir_inodeNum_from_path(path);
 
     /*
@@ -294,15 +355,64 @@ bool FileSystem::CreateFile(const string &filepath) {
         step 5: create new pair of mapping in its directory's data block
     */
 
+    char inode_buf[64], buf[BLKsize];
+    Get_inode_from_inodeNum(inode_buf, dir_inodeNum);
+
+    // modify directory data block
+    D.Getblk(buf, byte2int(inode_buf, 42, 44));
+    for(int i = 0; i < BLKsize; i += 12) {
+    	// find used = 0
+    	if(byte2int(buf + i, 8, 10) == 0) {
+    		// set used = 1;
+    		Fill_byte_by_num(buf + i, 8, 10, 1);
+
+    		// set filename
+    		Fill_byte_by_str(buf + i, 0, filename.size(), filename);
+
+    		// zero end of str
+    		if((int)filename.size() < 8) {
+    			buf[i + filename.size()] = 0;
+    		}
+
+    		// set next inodeNum
+    		Fill_byte_by_num(buf + i, 10, 12, next_inodeNum);
+
+    		break;
+    	} 
+    }
+    D.Putblk(buf, byte2int(inode_buf, 42, 44));
+
     /*
-    	step 6: initialize the first data block ( set the first block's first byte = 0xFF(EOF) )
+    	step 6: initialize the inode and the first data block ( set the first block's first byte = 0xFF(EOF) )
     */
+
+    // modify next inode
+    D.Getblk(buf, Get_actual_inodeBLKnumber(next_inodeNum));
+    int st = 64 * (next_inodeNum % 16);
+
+    string curTime = getTime();
+    // set flag
+    Fill_byte_by_num(buf + st, 0, 2, 0);
+    Fill_byte_by_str(buf + st, 2, 10, filename);
+    Fill_byte_by_str(buf + st, 10, curTime.size() + 10, curTime);
+    Fill_byte_by_str(buf + st, 26, curTime.size() + 26, curTime);
+    Fill_byte_by_num(buf + st, 42, 44, next_dataBLKNum);
+
+    D.Putblk(buf, Get_actual_inodeBLKnumber(next_inodeNum));
+
+    // modify next data block
+    D.Getblk(buf, Get_actual_dataBLKnumber(next_dataBLKNum));
+    // EOF
+    Fill_byte_by_num(buf, 0, 1, -1);
+    D.Putblk(buf, Get_actual_dataBLKnumber(next_dataBLKNum));
 
     /*
     	step 7: change inode bitmap and data block bitmap, save the super block
     */
 
-
+    Fill_inode_bitmap(next_inodeNum, true);
+    Fill_data_block_bitmap(next_dataBLKNum, true);
+    Save_superBLK();
 
     return true;
 }
