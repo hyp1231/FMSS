@@ -37,14 +37,14 @@ void get_opt(vector<string>& opt) {
 
 bool exec_opt(FileSystem& S, vector<string>& opt) {
 	if(opt.empty()) { return true; }
-	bool flag = true;
+	bool flag = true; string str;
 	switch(string_to_enum[opt[0]]) {
 		case _help:			// help
 			S.Help(); break;
 		case _exit:			// exit
 			flag = false; break;
         case _create:       // touch
-            // create a new file
+            cin >> str; S.CreateFile(str); break;
         case _delete:       // rm
             // delete a file
 		case undefined_opt:	// unknowned
