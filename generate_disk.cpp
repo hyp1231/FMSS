@@ -10,7 +10,25 @@ int main() {
     ofile.write((char*)&basic_size, sizeof(basic_size));
 
     char tmp = 0;
-    for(int i = 0; i < 1024 - 2; ++i) {
+
+    // inode number of '/'
+    ofile.write((char*)&tmp, sizeof(tmp));
+
+    // inode bitmap[0] = 1
+    tmp = 1;
+    ofile.write((char*)&tmp, sizeof(tmp));
+    tmp = 0;
+    for(int i = 0; i < 9; ++i) {
+    	ofile.write((char*)&tmp, sizeof(tmp));
+    }
+
+    // data block bitmap[0] = 1
+    tmp = 1;
+    ofile.write((char*)&tmp, sizeof(tmp));
+    tmp = 0;
+
+    // rest of super block
+    for(int i = 0; i < 1024 - 2 - 1 - 10 - 1; ++i) {
 	    ofile.write((char*)&tmp, sizeof(tmp));	// fill the file with '\0'
 	}
 

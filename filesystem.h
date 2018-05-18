@@ -9,16 +9,24 @@ class FileSystem {
 private:
 	const int BLKsize;
 
-	Disk D;					// disk
+	Disk D;						// disk
 	int root_dir_inodeNum;		// inodeNum of root dir
 	int cur_dir_inodeNum;		// inodeNum of cur dir
+
+	/*
+		bitmap: count from low to high, 0 - 31
+		eg. 0x80 means block 7 is not empty
+	*/
 	char inode_bitmap[10];
 	char data_block_bitmap[80];
 
     int Get_actual_dataBLKnumber(int n);
+    int Get_actual_inodeBLKnumber(int n);
     int Get_dir_inodeNum_from_path(vector<string>& path);
     int Get_file_inodeNum_from_dir(int dir_inodeNum, const string& filename);
     bool Get_inode_from_inodeNum(char buf[], int inodeNum);
+    int Find_empty_inodeNum();
+    int Find_empty_dataBLKNum();
 public:
 	FileSystem();
 	~FileSystem();
