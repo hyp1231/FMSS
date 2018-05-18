@@ -11,7 +11,7 @@ public:
 	FileSystem();
 	~FileSystem();
 	void Help();
-    int Get_actual_BLKnumber(int n);
+    int Get_actual_dataBLKnumber(int n);
     bool CreateFile(const string &filename);
     bool DeleteFile(const string &filename);
 };

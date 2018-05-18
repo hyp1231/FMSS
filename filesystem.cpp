@@ -21,7 +21,7 @@ void FileSystem::Help() {
 	cout << "* ------------------------------------ *" << endl;
 }
 
-int FileSystem::Get_actual_BLKnumber(int n) {
+int FileSystem::Get_actual_dataBLKnumber(int n) {
     return n + 86;
 }
 
