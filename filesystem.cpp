@@ -112,6 +112,12 @@ int FileSystem::Get_actual_dataBLKnumber(int n) {
     return n + 86;
 }
 
+// count from zero
+int FileSystem::Get_actual_inodeBLKnumber(int n) {
+	return 1 + n / 16;
+}
+
+
 // return -1 if illegal
 int FileSystem::Get_dir_inodeNum_from_path(vector<string>& path) {
     int p = 0, inode_num;
@@ -186,7 +192,7 @@ bool FileSystem::Get_inode_from_inodeNum(char buf[], int inodeNum) {
 	char BLKbuf[BLKsize];
 
 	// get inode table
-	D.Getblk(BLKbuf, 1 + inodeNum / 16);
+	D.Getblk(BLKbuf, Get_actual_inodeBLKnumber(inodeNum));
 
 	// get inode
 	for(int i = 0; i < 64; ++i) {
@@ -194,6 +200,42 @@ bool FileSystem::Get_inode_from_inodeNum(char buf[], int inodeNum) {
 	}
 
 	return true;
+}
+
+// find next empty inode number, scan map
+// return -1 if no space
+int FileSystem::Find_empty_inodeNum() {
+	for(int i = 0; i < 10; ++i) {
+		// find a byte
+		if((int)inode_bitmap[i] != -1) {
+			// m -> mask
+			for(int j = 0, m = 1; j < 8; ++j, m <<= 1) {
+				// find a bit
+				if((inode_bitmap[i] & m) == 0) {
+					return i * 8 + j;
+				}
+			}
+		}
+	}
+	return -1;
+}
+
+// find next empty data block number, scan map
+// return -1 if no space
+int FileSystem::Find_empty_dataBLKNum() {
+	for(int i = 0; i < 80; ++i) {
+		// find a byte
+		if((int)data_block_bitmap[i] != -1) {
+			// m -> mask
+			for(int j = 0, m = 1; j < 8; ++j, m <<= 1) {
+				// find a bit
+				if((data_block_bitmap[i] & m) == 0) {
+					return i * 8 + j;
+				}
+			}
+		}
+	}
+	return -1;
 }
 
 // return false if cannot create file
@@ -229,16 +271,39 @@ bool FileSystem::CreateFile(const string &filepath) {
 	}
 
     /*  
-        step 3: search for empty index_node and set corresponding attributes
+        step 3: search for empty index_node
+    */
+
+	int next_inodeNum = Find_empty_inodeNum();
+	if(next_inodeNum == -1) {
+		cout << "[Error] Cannot find an empty inode" << endl;
+		return false;
+	}
+
+	/*
+        step 4: search the block_bitmap for empty blocks
+    */
+
+    int next_dataBLKNum = Find_empty_dataBLKNum();
+    if(next_dataBLKNum == -1) {
+    	cout << "[Error] Cannot find an empty data block" << endl;
+    	return false;
+    }
+
+    /*
+        step 5: create new pair of mapping in its directory's data block
     */
 
     /*
-        step 4: create new pair of mapping in its directory's data block
+    	step 6: initialize the first data block ( set the first block's first byte = 0xFF(EOF) )
     */
 
     /*
-        step 5: search the block_bitmap for empty blocks and set corresponding bits to TRUE
+    	step 7: change inode bitmap and data block bitmap, save the super block
     */
+
+
+
     return true;
 }
 
