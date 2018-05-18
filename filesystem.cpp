@@ -16,6 +16,10 @@ bool byteEQUstring(const string& str, char buf[], int begin, int end) {
     return true;
 }
 
+bool byteEQUstring(char buf[], int begin, int end, const string& str) {
+	return byteEQUstring(str, buf, begin, end);
+}
+
 // untested
 // convert bytes( buf[begin, end) ) to int
 int byte2int(char buf[], int begin, int end) {
@@ -139,16 +143,58 @@ int FileSystem::Get_dir_inodeNum_from_path(vector<string>& path) {
     return inode_num;
 }
 
-// return -1 if not found
+/*
+	Make sure that the inode points to a directory
+	Find the inodeNum according to the filename
+
+	return -1 if not found
+*/
 int FileSystem::Get_file_inodeNum_from_dir(int dir_inodeNum, const string& filename) {
-	char buf[BLKsize];
-	//D.Getblk(buf, )
-	/*
-		TBA
-	*/
+	char inode_buf[64], buf[BLKsize];
+	
+	if(!Get_inode_from_inodeNum(inode_buf, dir_inodeNum)) {
+		cout << "[Error] Cannot get inode: " << dir_inodeNum << endl;
+		return -1;
+	}
+
+	// if inode doesn't point to a directory
+	if(byte2int(inode_buf, 0, 2) == 0) {
+		cout << "[Error] Inode " << dir_inodeNum << " is not a dir" << endl;
+		return -1;
+	}
+
+	// get the directory data block
+	D.Getblk(buf, byte2int(inode_buf, 42, 44));
+
+	for(int i = 0; i < 1024; i += 12) {
+		// check if filename EQU
+		if(byteEQUstring(buf + i, 0, 8, filename)) {
+			// check if is valid
+			if(byte2int(buf + i, 8, 10) == 1) {
+				// return inodeNum
+				return byte2int(buf + i, 10, 12);
+			}
+		}
+	}
+
+	// not found
 	return -1;
 }
 
+// return false if cannot get inode
+bool FileSystem::Get_inode_from_inodeNum(char buf[], int inodeNum) {
+	char BLKbuf[BLKsize];
+
+	// get inode table
+	D.Getblk(BLKbuf, 1 + inodeNum / 16);
+
+	// get inode
+	for(int i = 0; i < 64; ++i) {
+		buf[i] = BLKbuf[i + (inodeNum % 16) * 64];
+	}
+
+	return true;
+}
 
 // return false if cannot create file
 bool FileSystem::CreateFile(const string &filepath) {
