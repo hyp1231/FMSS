@@ -28,9 +28,9 @@ int FileSystem::Get_actual_dataBLKnumber(int n) {
 // untested
 // get directory block(dir) and directory filename_map block(dir_map)
 void getDirInfo(char dir[], char dir_map[], int blk_num) {
-    Get(dir, Get_actual_BLKnumber(blk_num));
+    Get(dir, Get_actual_dataBLKnumber(blk_num));
     int map_blk_number = dir[0] + (dir[1] << 8);
-    Get(dir_map, Get_actual_BLKnumber(map_blk_number));
+    Get(dir_map, Get_actual_dataBLKnumber(map_blk_number));
 }
 
 // untested
