@@ -7,7 +7,7 @@ Disk::Disk() : disk_file("diskdata") {
 	char tmp = 0;
 	for(int i = 0; i < 2; ++i) {		// read the basic size of a block in the disk
 		ifile.read((char*)&tmp, sizeof(tmp));
-		BLKsize += tmp << (8 * i);		// Little endian
+		BLKsize += (int)tmp << (8 * i);	// Little endian
 	}
 	ifile.close();
 }
@@ -42,8 +42,4 @@ bool Disk::Putblk(char buf[], int blk_num) {
 	}
 	ofile.close();
 	return true;
-}
-
-int Disk::Get_BLKsize() {
-	return BLKsize;
 }

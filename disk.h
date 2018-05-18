@@ -15,5 +15,4 @@ public:
 
 	bool Getblk(char buf[], int blk_num);
 	bool Putblk(char buf[], int blk_num);
-	int Get_BLKsize();
 };
