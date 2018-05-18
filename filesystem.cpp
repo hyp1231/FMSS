@@ -48,7 +48,7 @@ bool Decomposition_path(string ori_path, vector<string>& path) {
 
     // rest
     int p;
-    while((p = ori_path.find('/')) != -1) {
+    while((p = (int)ori_path.find('/')) != -1) {
         // start of '/', illegal
         if(p < 1) { return false; }
 
@@ -193,11 +193,11 @@ int FileSystem::Get_file_inodeNum_from_dir(int dir_inodeNum, const string& filen
 	}
 
 	// get the directory data block
-	D.Getblk(buf, byte2int(inode_buf, 42, 44));
+	D.Getblk(buf, Get_actual_dataBLKnumber(byte2int(inode_buf, 42, 44)));
 
 	for(int i = 0; i < BLKsize; i += 12) {
 		// check if filename EQU
-		if(byteEQUstring(buf + i, 0, 8, filename)) {
+		if(byteEQUstring(buf + i, 0, (int)filename.size(), filename)) {
 			// check if is used
 			if(byte2int(buf + i, 8, 10) == 1) {
 				// return inodeNum
@@ -369,7 +369,7 @@ bool FileSystem::CreateFile(const string &filepath) {
     		Fill_byte_by_num(buf + i, 8, 10, 1);
 
     		// set filename
-    		Fill_byte_by_str(buf + i, 0, filename.size(), filename);
+    		Fill_byte_by_str(buf + i, 0, (int)filename.size(), filename);
 
     		// zero end of str
     		if((int)filename.size() < 8) {
@@ -396,8 +396,8 @@ bool FileSystem::CreateFile(const string &filepath) {
     // set flag
     Fill_byte_by_num(buf + st, 0, 2, 0);
     Fill_byte_by_str(buf + st, 2, 10, filename);
-    Fill_byte_by_str(buf + st, 10, curTime.size() + 10, curTime);
-    Fill_byte_by_str(buf + st, 26, curTime.size() + 26, curTime);
+    Fill_byte_by_str(buf + st, 10, (int)curTime.size() + 10, curTime);
+    Fill_byte_by_str(buf + st, 26, (int)curTime.size() + 26, curTime);
     Fill_byte_by_num(buf + st, 42, 44, next_dataBLKNum);
 
     D.Putblk(buf, Get_actual_inodeBLKnumber(next_inodeNum));
