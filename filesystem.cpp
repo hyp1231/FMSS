@@ -188,10 +188,11 @@ int FileSystem::Get_dir_inodeNum_from_path(vector<string>& path) {
 /*
 	Make sure that the inode points to a directory
 	Find the inodeNum according to the filename
+    if isDelete is TRUE, after finding the inodeNum, set valid byte to ZERO
 
 	return -1 if not found
 */
-int FileSystem::Get_file_inodeNum_from_dir(int dir_inodeNum, const string& filename) {
+int FileSystem::Get_file_inodeNum_from_dir(int dir_inodeNum, const string& filename, bool isDelete) {
 	char inode_buf[64], buf[BLKsize];
 	
 	if(!Get_inode_from_inodeNum(inode_buf, dir_inodeNum)) {
@@ -214,7 +215,16 @@ int FileSystem::Get_file_inodeNum_from_dir(int dir_inodeNum, const string& filen
 			// check if is used
 			if(byte2int(buf, i + 8, i + 10) == 1) {
 				// return inodeNum
+                if (isDelete) {
+                    Fill_byte_by_num(buf, i + 8, i + 10, 0);
+                    D.Putblk(buf, Get_actual_dataBLKnumber(byte2int(inode_buf, 42, 44)));
+                }
 				return byte2int(buf, i + 10, i + 12);
+                // int file_inodeNum = byte2int(buf, i + 10, i + 12);
+                // if (isDelete) {
+                //     Fill_inode_bitmap(file_inodeNum,false);
+                // }
+                // return file_inodeNum;
 			}
 		}
 	}
@@ -307,6 +317,17 @@ void FileSystem::Save_superBLK() {
     D.Putblk(buf, 0);
 }
 
+// find EOF in a file, return the byte_num if EOF in this block
+//    else return -1
+int FileSystem::FindEOF(char buf[]) {
+    for (int i = 0; i < BLKsize - 1; i++) {
+        int num = byte2int(buf, i, i + 2);
+        if (num == -1)
+            return i;
+    }
+    return -1;
+}
+
 // return false if cannot create file
 bool FileSystem::CreateFile(const string &filepath) {
     /* 
@@ -342,7 +363,7 @@ bool FileSystem::CreateFile(const string &filepath) {
     */
 
 	if(Get_file_inodeNum_from_dir(dir_inodeNum, filename) != -1) {
-		cout << "[Error] File already exist" << endl;
+		cout << "[Error] File already exists" << endl;
 		return false;
 	}
 
@@ -457,28 +478,49 @@ bool FileSystem::DeleteFile(const string &filepath) {
 
     /*
         step 2: make sure file exists; otherwise, return FALSE
-    */
-
-    
-
-    /*
         step 3: modify dir's data block to remove this file's inode
         (set valid to 0x0)
     */
+
+    int dir_inodeNum = Get_dir_inodeNum_from_path(path);
+    int file_inodeNum = Get_file_inodeNum_from_dir(dir_inodeNum, filename, true);
+    if (file_inodeNum == -1) {
+        cout << "[Error] File doesn't exist (cannot delete file \""
+        << filename << "\")" << endl;
+        return false;
+    }
 
     /*
         step 4: delete data in file's data_BLK
         (set corresponding bit in data bitmap to 0)
     */
 
+    char file_buf[64];
+    Get_inode_from_inodeNum(file_buf, file_inodeNum);
+    for (int i = 42; i < 58; i += 2) {
+        char fileBLK[BLKsize];
+        int dataNum = byte2int(file_buf, i, i + 2);
+        Fill_data_block_bitmap(dataNum, false);
+        // if EOF, break
+        D.Getblk(fileBLK, Get_actual_dataBLKnumber(dataNum));
+        if (FindEOF(fileBLK) != -1)
+            break;
+    }
+
     /*
         step 5: remove file's inode
         (set corresponding bit in inode bitmap to 0)
     */
 
+    Fill_inode_bitmap(file_inodeNum, false);
+
     /*
         step 6: save the super block
     */
+
+    Save_superBLK();
+
+    return true;
 }
 
 void FileSystem::ListFile() {
@@ -486,7 +528,7 @@ void FileSystem::ListFile() {
         step 1: get current dir block
     */
 
-    char inode_buf[64], dir_buf[64];
+    char inode_buf[64], dir_buf[BLKsize];
     Get_inode_from_inodeNum(inode_buf, cur_dir_inodeNum);
     // get dir data block
     D.Getblk(dir_buf, Get_actual_dataBLKnumber(byte2int(inode_buf, 42, 44)));
@@ -508,6 +550,7 @@ void FileSystem::ListFile() {
             }
         }
     }
+    cout << endl;
 }
 
 int FileSystem::Get_cur_dir_inodeNum() {

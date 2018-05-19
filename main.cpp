@@ -46,9 +46,14 @@ bool exec_opt(FileSystem& S, vector<string>& opt) {
         case _create:       // touch
             S.CreateFile(opt[1]); break;
         case _delete:       // rm
-            // delete a file
+            S.DeleteFile(opt[1]); break;
         case _list:         // ls
-            S.ListFile();
+            if (opt.size() > 1) {
+                cout << "Too many parameters in command \"ls\"" << endl;
+                S.Help();
+                break;
+            }
+            S.ListFile(); break;
 		case undefined_opt:	// unknowned
 			cout << "Unknown option... ╮(￣▽￣"")╭" << endl; break;
 		default: break;
