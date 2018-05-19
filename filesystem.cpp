@@ -73,8 +73,8 @@ void Fill_byte_by_num(char buf[], int begin, int end, int num) {
 }
 
 void Fill_byte_by_str(char buf[], int begin, int end, const string& str) {
-	for(int i = begin; i < end; ++i) {
-		buf[i] = str[i];
+	for(int i = begin, t = 0; i < end; ++i, ++t) {
+		buf[i] = str[t];
 	}
 }
 
@@ -367,10 +367,8 @@ bool FileSystem::CreateFile(const string &filepath) {
     	if(byte2int(buf, i + 8, i + 10) == 0) {
     		// set used = 1;
     		Fill_byte_by_num(buf, i + 8, i + 10, 1);
-
     		// set filename
     		Fill_byte_by_str(buf, i, i + (int)filename.size(), filename);
-
     		// zero end of str
     		if((int)filename.size() < 8) {
     			buf[i + filename.size()] = 0;
@@ -395,7 +393,7 @@ bool FileSystem::CreateFile(const string &filepath) {
     string curTime = getTime();
     // set flag
     Fill_byte_by_num(buf, st, st + 2, 0);
-    Fill_byte_by_str(buf, st + 2, st + 10, filename);
+    Fill_byte_by_str(buf, st + 2, st + 2 + (int)filename.size(), filename);
     Fill_byte_by_str(buf, st + 10, st + (int)curTime.size() + 10, curTime);
     Fill_byte_by_str(buf, st + 26, st + (int)curTime.size() + 26, curTime);
     Fill_byte_by_num(buf, st + 42, st + 44, next_dataBLKNum);
