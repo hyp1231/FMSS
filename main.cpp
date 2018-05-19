@@ -21,7 +21,7 @@
 using namespace std;
 
 enum enum_opts {
-	undefined_opt, _help, _exit, _create, _delete
+	undefined_opt, _help, _exit, _create, _delete, _list
 };
 
 static map<string, enum_opts> string_to_enum;
@@ -47,6 +47,8 @@ bool exec_opt(FileSystem& S, vector<string>& opt) {
             S.CreateFile(opt[1]); break;
         case _delete:       // rm
             // delete a file
+        case _list:         // ls
+            S.ListFile();
 		case undefined_opt:	// unknowned
 			cout << "Unknown option... ╮(￣▽￣"")╭" << endl; break;
 		default: break;
@@ -71,6 +73,7 @@ void initialization() {
 	string_to_enum["exit"] = _exit;
     string_to_enum["touch"] = _create;
     string_to_enum["rm"] = _delete;
+    string_to_enum["ls"] = _list;
 }
 
 int main() {

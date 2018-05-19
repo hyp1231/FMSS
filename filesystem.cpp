@@ -35,6 +35,19 @@ int byte2int(char buf[], int begin, int end) {
     return ret;
 }
 
+// convert bytes( buf[begin, end) ) to string
+//   conversion stops at END or '0x0' byte
+string byte2string(char buf[], int begin, int end) {
+    string ret = "";
+    for (int i = begin; i < end; i++) {
+        int tmp = byte2int(buf, i, i + 1);
+        if (tmp == 0)
+            break;
+        ret += buf[i];
+    }
+    return ret;
+}
+
 // find '/' and change a path to dir_names
 // return False if illegal
 bool Decomposition_path(string ori_path, vector<string>& path) {
@@ -415,6 +428,86 @@ bool FileSystem::CreateFile(const string &filepath) {
     Save_superBLK();
 
     return true;
+}
+
+// return false if cannot delete file
+bool FileSystem::DeleteFile(const string &filepath) {
+    /* 
+        step 1: find the right directory
+    */
+
+    vector<string> path;
+    string filename;
+    if(!Decomposition_path(filepath, path) || (int)path.size() < 2) {
+        cout << "[Error] Illegal path!" << endl;
+        return false;
+    }
+
+    filename = path[path.size() - 1];
+    path.pop_back();
+    if((int)filename.size() > 8) {
+        cout << "[Error] filename is too long" << endl;
+        return false;
+    }
+
+    if(path.empty()) {
+        cout << "[Error] Empty path!" << endl;
+        return false;
+    }
+
+    /*
+        step 2: make sure file exists; otherwise, return FALSE
+    */
+
+    
+
+    /*
+        step 3: modify dir's data block to remove this file's inode
+        (set valid to 0x0)
+    */
+
+    /*
+        step 4: delete data in file's data_BLK
+        (set corresponding bit in data bitmap to 0)
+    */
+
+    /*
+        step 5: remove file's inode
+        (set corresponding bit in inode bitmap to 0)
+    */
+
+    /*
+        step 6: save the super block
+    */
+}
+
+void FileSystem::ListFile() {
+    /* 
+        step 1: get current dir block
+    */
+
+    char inode_buf[64], dir_buf[64];
+    Get_inode_from_inodeNum(inode_buf, cur_dir_inodeNum);
+    // get dir data block
+    D.Getblk(dir_buf, Get_actual_dataBLKnumber(byte2int(inode_buf, 42, 44)));
+
+    /* 
+        step 2: list all files in the dir
+    */
+
+    int cnt_per_line = 0;
+    int max_per_line = 4;
+    // here is a bug: BLKsize = 0 ????
+    for (int i = 0; i < BLKsize; i += 12) {
+        if (byte2int(dir_buf, i + 8, i + 10) != 0) {
+            cout << setw(10) << byte2string(dir_buf, i, i + 8);
+            cnt_per_line++;
+            if (cnt_per_line == max_per_line) {
+                cnt_per_line = 0;
+                cout << endl;
+            }
+        }
+    }
 }
 
 int FileSystem::Get_cur_dir_inodeNum() {

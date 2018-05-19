@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include <iomanip>
 #include <string>
 #include <vector>
 #include <ctime>
@@ -38,7 +39,8 @@ public:
 	~FileSystem();
 	void Help();
     bool CreateFile(const string &filepath);
-    //bool DeleteFile(const string &filepath);
+    bool DeleteFile(const string &filepath);
+    void ListFile();
     int Get_cur_dir_inodeNum();
     void Print_cur_path();
 };
