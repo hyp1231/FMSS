@@ -138,8 +138,12 @@ FileSystem::~FileSystem() {
 
 void FileSystem::Help() {
 	cout << "* ------------------------------------ *" << endl;
-	cout << "[help]: get help list" << endl;
-	cout << "[exit]: exit the system" << endl;
+	cout << "[help]:    get help list" << endl;
+	cout << "[exit]:    exit the system" << endl;
+    cout << "[touch]:   create file" << endl;
+    cout << "[rm]:      delete file" << endl;
+    cout << "[ls]:      list files and directories in cur directory" << endl;
+    cout << "           [-a] to show hidden files" << endl;
 	cout << "* ------------------------------------ *" << endl;
 }
 
@@ -209,7 +213,7 @@ int FileSystem::Get_file_inodeNum_from_dir(int dir_inodeNum, const string& filen
 	// get the directory data block
 	D.Getblk(buf, Get_actual_dataBLKnumber(byte2int(inode_buf, 42, 44)));
 
-	for(int i = 0; i < BLKsize; i += 12) {
+	for(int i = 0; i + 12 <= BLKsize; i += 12) {
 		// check if filename EQU
 		if(byteEQUstring(buf, i, i + (int)filename.size(), filename)) {
 			// check if is used
@@ -407,7 +411,7 @@ bool FileSystem::CreateFile(const string &filepath) {
 
     // modify directory data block
     D.Getblk(buf, Get_actual_dataBLKnumber(byte2int(inode_buf, 42, 44)));
-    for(int i = 0; i < BLKsize; i += 12) {
+    for(int i = 0; i + 12 <= BLKsize; i += 12) {
     	// find used = 0
     	if(byte2int(buf, i + 8, i + 10) == 0) {
     		// set used = 1;
@@ -567,7 +571,7 @@ void FileSystem::ListFile(const string param) {
     int cnt_per_line = 0;
     int max_per_line = 4;
     // here is a bug: BLKsize = 0 ????
-    for (int i = 0; i < BLKsize; i += 12) {
+    for (int i = 0; i + 12 <= BLKsize; i += 12) {
         if (byte2int(dir_buf, i + 8, i + 10) != 0) {
             string name = byte2string(dir_buf, i, i + 8);
             // if not show hidden files and filename start with '.'
@@ -583,7 +587,9 @@ void FileSystem::ListFile(const string param) {
             }
         }
     }
-    cout << endl;
+    if(cnt_per_line != 0) {
+        cout << endl;
+    }
 }
 
 int FileSystem::Get_cur_dir_inodeNum() {
