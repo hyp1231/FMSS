@@ -41,7 +41,7 @@ public:
 	void Help();
     bool CreateFile(const string &filepath);
     bool DeleteFile(const string &filepath);
-    void ListFile();
+    void ListFile(const string param = "none");
     int Get_cur_dir_inodeNum();
     void Print_cur_path();
 };
