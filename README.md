@@ -8,15 +8,9 @@ Developed by "Prime Luo" and his buddy "Yupeng Hou"
 
 The system uses a file named "diskdata" to simulate a disk.
 
-So we need to generate this file firstly.
-
-`make gen`
-
-`./gen`
+We just input `make` to build "diskdata" and "main" automatically
 
 And then you have this file, so you can run the system!
-
-`make`
 
 `./main`
 
