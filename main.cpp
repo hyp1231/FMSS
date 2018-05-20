@@ -56,7 +56,8 @@ bool exec_opt(FileSystem& S, vector<string>& opt) {
             	S.ListFile(opt[1]);
             } else {					// none
             	S.ListFile();
-            }
+            } 
+            break;
         case _mkdir:        // mkdir
             S.CreateDir(opt[1]); break;
         case _cd:           // cd
