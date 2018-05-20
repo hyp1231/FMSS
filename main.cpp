@@ -21,7 +21,8 @@
 using namespace std;
 
 enum enum_opts {
-	undefined_opt, _help, _exit, _create, _delete, _list
+	undefined_opt, _help, _exit, _create, _delete, _list, _mkdir,
+    _cd
 };
 
 static map<string, enum_opts> string_to_enum;
@@ -54,8 +55,12 @@ bool exec_opt(FileSystem& S, vector<string>& opt) {
                 break;
             }
             S.ListFile(); break;
+        case _mkdir:        // mkdir
+            S.CreateDir(opt[1]); break;
+        case _cd:           // cd
+            S.OpenDir(opt[1]); break;
 		case undefined_opt:	// unknowned
-			cout << "Unknown option... ╮(￣▽￣"")╭" << endl; break;
+			cout << "Unknown option..." << endl; break;
 		default: break;
 	}
 	return flag;
@@ -79,6 +84,8 @@ void initialization() {
     string_to_enum["touch"] = _create;
     string_to_enum["rm"] = _delete;
     string_to_enum["ls"] = _list;
+    string_to_enum["mkdir"] = _mkdir;
+    string_to_enum["cd"] = _cd;
 }
 
 int main() {

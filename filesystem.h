@@ -34,6 +34,7 @@ private:
     void Fill_data_block_bitmap(int blockNum, bool flag);
     void Save_superBLK();
     int FindEOF(char buf[]);
+    bool CreateInCurDir(int &dir_inodeNum, const string &dirname, bool isFile);
 
 public:
 	FileSystem();
@@ -42,6 +43,8 @@ public:
     bool CreateFile(const string &filepath);
     bool DeleteFile(const string &filepath);
     void ListFile();
+    bool CreateDir(const string &filepath);
+    void OpenDir(const string &dirpath);
     int Get_cur_dir_inodeNum();
     void Print_cur_path();
 };
