@@ -86,7 +86,7 @@ void Fill_byte_by_num(char buf[], int begin, int end, int num) {
 }
 
 void Fill_byte_by_str(char buf[], int begin, int end, const string& str) {
-	for(int i = begin, t = 0; i < end; ++i, ++t) {
+	for(int i = begin, t = 0; i < end && t < (int)str.size(); ++i, ++t) {
 		buf[i] = str[t];
 	}
 }
@@ -224,11 +224,6 @@ int FileSystem::Get_file_inodeNum_from_dir(int dir_inodeNum, const string& filen
                     D.Putblk(buf, Get_actual_dataBLKnumber(byte2int(inode_buf, 42, 44)));
                 }
 				return byte2int(buf, i + 10, i + 12);
-                // int file_inodeNum = byte2int(buf, i + 10, i + 12);
-                // if (isDelete) {
-                //     Fill_inode_bitmap(file_inodeNum,false);
-                // }
-                // return file_inodeNum;
 			}
 		}
 	}
@@ -332,74 +327,46 @@ int FileSystem::FindEOF(char buf[]) {
     return -1;
 }
 
-// return false if cannot create file
-bool FileSystem::CreateFile(const string &filepath) {
-    /* 
-        step 1: find the right directory
-    */
-
-    vector<string> path;
-    string filename;
-    int dir_inodeNum;
-    if(!Decomposition_path(filepath, path)) {
-        cout << "[Error] Illegal path!" << endl;
-        return false;
-    }
-
-    if(path.empty()) {
-        cout << "[Error] Empty path!" << endl;
-        return false;
-    }
-
-    if((int)path.size() >= 2) {
-        filename = path[path.size() - 1];
-    } else {
-        filename = path[0]; // omit path
-    }
-    path.pop_back();
-    
-    if((int)filename.size() > 8) {
-    	cout << "[Error] filename is too long" << endl;
-    	return false;
-    }
-
-    if((int)path.size() >= 2) {
-        dir_inodeNum = Get_dir_inodeNum_from_path(path);
-    } else {
-        dir_inodeNum = cur_dir_inodeNum;    // omit path -> cur dir
-    }
-
+// create a directory in dir "dir_inodeNum", and new dir_inode will be stored in dir_inodeNum
+//      if already exists, return FALSE; otherwise, return TRUE
+bool FileSystem::CreateInCurDir(int &dir_inodeNum, const string &filename, bool isFile) {
     /*
-        further plan: mkdir
+        step 1: make sure filename isn't too large; otherwise, return FALSE
     */
+
+    if((int)filename.size() > 8) {
+        cout << "[Error] filename is too long" << endl;
+        return false;
+    }
 
     /*
         step 2: make sure no files have the same name; otherwise, return FALSE
     */
 
-	if(Get_file_inodeNum_from_dir(dir_inodeNum, filename) != -1) {
-		cout << "[Error] File already exists" << endl;
-		return false;
-	}
+    int new_dir_inodeNum = Get_file_inodeNum_from_dir(dir_inodeNum, filename);
+    if(new_dir_inodeNum != -1) {
+        dir_inodeNum = new_dir_inodeNum;
+        return false;
+    }
 
     /*  
         step 3: search for empty index_node
     */
 
-	int next_inodeNum = Find_empty_inodeNum();
-	if(next_inodeNum == -1) {
-		cout << "[Error] Cannot find an empty inode" << endl;
-		return false;
-	}
+    int next_inodeNum = Find_empty_inodeNum();
+    if(next_inodeNum == -1) {
+        cout << "[Error] Cannot find an empty inode" << endl;
+        return false;
+    }    
 
-	/*
+    /*
         step 4: search the block_bitmap for empty blocks
     */
 
     int next_dataBLKNum = Find_empty_dataBLKNum();
     if(next_dataBLKNum == -1) {
-    	cout << "[Error] Cannot find an empty data block" << endl;
-    	return false;
+        cout << "[Error] Cannot find an empty data block" << endl;
+        return false;
     }
 
     /*
@@ -432,7 +399,7 @@ bool FileSystem::CreateFile(const string &filepath) {
     D.Putblk(buf, Get_actual_dataBLKnumber(byte2int(inode_buf, 42, 44)));
 
     /*
-    	step 6: initialize the inode and the first data block ( set the first block's first byte = 0xFF(EOF) )
+        step 6: initialize the inode and the first data block ( set the first block's first byte = 0xFF(EOF) )
     */
 
     // modify next inode
@@ -441,7 +408,10 @@ bool FileSystem::CreateFile(const string &filepath) {
 
     string curTime = getTime();
     // set flag
-    Fill_byte_by_num(buf, st, st + 2, 0);
+    if (isFile)
+        Fill_byte_by_num(buf, st, st + 2, 0);
+    else
+        Fill_byte_by_num(buf, st, st + 2, 1);
     Fill_byte_by_str(buf, st + 2, st + 2 + (int)filename.size(), filename);
     Fill_byte_by_str(buf, st + 10, st + (int)curTime.size() + 10, curTime);
     Fill_byte_by_str(buf, st + 26, st + (int)curTime.size() + 26, curTime);
@@ -451,18 +421,71 @@ bool FileSystem::CreateFile(const string &filepath) {
 
     // modify next data block
     D.Getblk(buf, Get_actual_dataBLKnumber(next_dataBLKNum));
-    // EOF
-    Fill_byte_by_num(buf, 0, 1, -1);
+    if (isFile) {
+        // EOF
+        Fill_byte_by_num(buf, 0, 1, -1);  
+    }
+    else {
+        // set index of "."
+        Fill_byte_by_str(buf, 0, 8, ".");
+        Fill_byte_by_num(buf, 8, 10, 1);
+        Fill_byte_by_num(buf, 10, 12, next_inodeNum);
+        // set index of ".."
+        Fill_byte_by_str(buf, 12, 20, "..");
+        Fill_byte_by_num(buf, 20, 22, 1);
+        Fill_byte_by_num(buf, 22, 24, dir_inodeNum);
+    }
     D.Putblk(buf, Get_actual_dataBLKnumber(next_dataBLKNum));
 
     /*
-    	step 7: change inode bitmap and data block bitmap, save the super block
+        step 7: change inode bitmap and data block bitmap, save the super block
     */
 
     Fill_inode_bitmap(next_inodeNum, true);
     Fill_data_block_bitmap(next_dataBLKNum, true);
     Save_superBLK();
 
+    dir_inodeNum = next_inodeNum;
+    return true;
+}
+
+// return false if cannot create file
+bool FileSystem::CreateFile(const string &filepath) {
+    /* 
+        step 1: find the right directory
+    */
+
+    vector<string> path;
+    string filename;
+    int dir_inodeNum;
+    if(!Decomposition_path(filepath, path)) {
+        cout << "[Error] Illegal path!" << endl;
+        return false;
+    }
+
+    if(path.empty()) {
+        cout << "[Error] Empty path!" << endl;
+        return false;
+    }
+
+    if (path[0] == "/") {
+        dir_inodeNum = root_dir_inodeNum;
+        path.erase(path.begin());   // erase the root dir "/"
+    }
+    else
+        dir_inodeNum = cur_dir_inodeNum;
+
+    // apart from the last file, all other directories need to be created
+    for (int i = 0; i < (int)path.size() - 1; i++) {
+        // get to the next directory (dir_inodeNum points to its inode)
+        // if dir exists, nothing happens; otherwise, create a new dir and return false
+        CreateInCurDir(dir_inodeNum, path[i], false);
+    }
+    if (!CreateInCurDir(dir_inodeNum, path[path.size() - 1], true)) {
+        // dir already exists
+        cout << "[Error] " << filepath << " already exists!" << endl;
+        return false;
+    }
     return true;
 }
 
@@ -592,15 +615,143 @@ void FileSystem::ListFile(const string param) {
     }
 }
 
+bool FileSystem::CreateDir(const string &filepath) {
+    /* 
+        step 1: find the right directory
+    */
+
+    vector<string> path;
+    string dirname;
+    int dir_inodeNum;
+    if(!Decomposition_path(filepath, path)) {
+        cout << "[Error] Illegal path!" << endl;
+        return false;
+    }
+
+    if(path.empty()) {
+        cout << "[Error] Empty path!" << endl;
+        return false;
+    }
+
+    if (path[0] == "/") {
+        dir_inodeNum = root_dir_inodeNum;
+        path.erase(path.begin());   // erase the root dir "/"
+    }
+    else
+        dir_inodeNum = cur_dir_inodeNum;
+
+    // apart from the last file, all other directories need to be created
+    for (int i = 0; i < (int)path.size() - 1; i++) {
+        // get to the next directory (dir_inodeNum points to its inode)
+        // if dir exists, nothing happens; otherwise, create a new dir and return false
+        CreateInCurDir(dir_inodeNum, path[i], false);
+    }
+    if (!CreateInCurDir(dir_inodeNum, path[path.size() - 1], false)) {
+        // dir already exists
+        cout << "[Error] " << filepath << " already exists!" << endl;
+        return false;
+    }
+    return true;
+}
+
+void FileSystem::OpenDir(const string &dirpath) {
+    /*
+        step 1: get to parent dir
+     */
+
+    vector<string> path;
+    string dirname;
+    int dir_inodeNum;
+    if(!Decomposition_path(dirpath, path)) {
+        cout << "[Error] Illegal path!" << endl;
+        return ;
+    }
+
+    if(path.empty()) {
+        cout << "[Error] Empty path!" << endl;
+        return ;
+    }
+
+    if((int)path.size() >= 2) {
+        dirname = path[path.size() - 1];
+    } else {
+        dirname = path[0]; // omit path
+    }
+    path.pop_back();
+
+    if((int)path.size() >= 1) {
+        dir_inodeNum = Get_dir_inodeNum_from_path(path);
+    } else {
+        dir_inodeNum = cur_dir_inodeNum;    // omit path -> cur dir
+    }
+
+    if (dir_inodeNum == -1) {
+        cout << "[Error] Directory \"" << dirpath << "\" doesn't exist!" << endl;
+        return;
+    }
+
+    /*
+        step 2: open dir
+     */
+
+    char inode_buf[64], dir_buf[BLKsize];
+    Get_inode_from_inodeNum(inode_buf, dir_inodeNum);
+    // get dir data block
+    D.Getblk(dir_buf, Get_actual_dataBLKnumber(byte2int(inode_buf, 42, 44)));
+
+    for (int i = 0; i < BLKsize; i += 12) {
+        if (byte2int(dir_buf, i + 8, i + 10) != 0) {
+            // find file that has "dirname" in dir_buf
+            if (byte2string(dir_buf, i, i + 8) == dirname) {
+                char tmp_buf[64];
+                int tmp_inodeNum = byte2int(dir_buf, i + 10, i + 12);
+                Get_inode_from_inodeNum(tmp_buf, tmp_inodeNum);
+
+                // make sure the found file is a directory
+                if (byte2int(tmp_buf, 0, 2) == 0) {
+                    cout << "[Error] \"" << dirpath << "\" is not a directory" << endl;
+                    return;
+                }
+
+                // the found file is a directory
+                //      modify cur_path
+                path.push_back(dirname);
+                if (path[0] == "/") {
+                    cur_path = path;
+                }
+                else {
+                    for (int i = 0; i < (int)path.size(); i++) {
+                        if (path[i] == ".") continue;
+                        else if (path[i] == "..") {
+                            if (cur_dir_inodeNum != root_dir_inodeNum)
+                                cur_path.pop_back();
+                        }                            
+                        else
+                            cur_path.push_back(path[i]);
+                    }
+                }
+
+                //      modify cur_dir_inodeNum
+                cur_dir_inodeNum = tmp_inodeNum;
+
+                return ;
+            }
+        }
+    }
+
+    cout << "[Error] Directory \"" << dirpath << "\" doesn't exist!" << endl;
+    return;
+}
+
 int FileSystem::Get_cur_dir_inodeNum() {
     return cur_dir_inodeNum;
 }
 
 void FileSystem::Print_cur_path() {
 	for(int i = 0; i < (int)cur_path.size(); ++i) {
+        cout << cur_path[i];
 		if(i != 0 && i != (int)cur_path.size() - 1) {
 			cout << "/";
 		}
-		cout << cur_path[i];
 	}
 }
