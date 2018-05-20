@@ -336,27 +336,38 @@ bool FileSystem::CreateFile(const string &filepath) {
 
     vector<string> path;
     string filename;
-    if(!Decomposition_path(filepath, path) || (int)path.size() < 2) {
+    int dir_inodeNum;
+    if(!Decomposition_path(filepath, path)) {
         cout << "[Error] Illegal path!" << endl;
         return false;
     }
 
-    filename = path[path.size() - 1];
+    if(path.empty()) {
+        cout << "[Error] Empty path!" << endl;
+        return false;
+    }
+
+    if((int)path.size() >= 2) {
+        filename = path[path.size() - 1];
+    } else {
+        filename = path[0]; // omit path
+    }
     path.pop_back();
+    
     if((int)filename.size() > 8) {
     	cout << "[Error] filename is too long" << endl;
     	return false;
     }
 
-    if(path.empty()) {
-    	cout << "[Error] Empty path!" << endl;
-    	return false;
+    if((int)path.size() >= 2) {
+        dir_inodeNum = Get_dir_inodeNum_from_path(path);
+    } else {
+        dir_inodeNum = cur_dir_inodeNum;    // omit path -> cur dir
     }
 
     /*
-    	further plan: mkdir
+        further plan: mkdir
     */
-    int dir_inodeNum = Get_dir_inodeNum_from_path(path);
 
     /*
         step 2: make sure no files have the same name; otherwise, return FALSE
@@ -459,15 +470,9 @@ bool FileSystem::DeleteFile(const string &filepath) {
 
     vector<string> path;
     string filename;
-    if(!Decomposition_path(filepath, path) || (int)path.size() < 2) {
+    int dir_inodeNum;
+    if(!Decomposition_path(filepath, path)) {
         cout << "[Error] Illegal path!" << endl;
-        return false;
-    }
-
-    filename = path[path.size() - 1];
-    path.pop_back();
-    if((int)filename.size() > 8) {
-        cout << "[Error] filename is too long" << endl;
         return false;
     }
 
@@ -476,13 +481,35 @@ bool FileSystem::DeleteFile(const string &filepath) {
         return false;
     }
 
+    if((int)path.size() >= 2) {
+        filename = path[path.size() - 1];
+    } else {
+        filename = path[0]; // omit path
+    }
+    path.pop_back();
+
+    if((int)filename.size() > 8) {
+        cout << "[Error] filename is too long" << endl;
+        return false;
+    }
+
+    if(filename == "." || filename == "..") {
+        cout << "[Error] '.' or '..' cannot be removed" << endl;
+        return false;
+    }
+
+    if((int)path.size() >= 2) {
+        dir_inodeNum = Get_dir_inodeNum_from_path(path);
+    } else {
+        dir_inodeNum = cur_dir_inodeNum;    // omit path -> cur dir
+    }
+
     /*
         step 2: make sure file exists; otherwise, return FALSE
         step 3: modify dir's data block to remove this file's inode
         (set valid to 0x0)
     */
 
-    int dir_inodeNum = Get_dir_inodeNum_from_path(path);
     int file_inodeNum = Get_file_inodeNum_from_dir(dir_inodeNum, filename, true);
     if (file_inodeNum == -1) {
         cout << "[Error] File doesn't exist (cannot delete file \""
@@ -523,7 +550,7 @@ bool FileSystem::DeleteFile(const string &filepath) {
     return true;
 }
 
-void FileSystem::ListFile() {
+void FileSystem::ListFile(const string param) {
     /* 
         step 1: get current dir block
     */
@@ -542,7 +569,13 @@ void FileSystem::ListFile() {
     // here is a bug: BLKsize = 0 ????
     for (int i = 0; i < BLKsize; i += 12) {
         if (byte2int(dir_buf, i + 8, i + 10) != 0) {
-            cout << setw(10) << byte2string(dir_buf, i, i + 8);
+            string name = byte2string(dir_buf, i, i + 8);
+            // if not show hidden files and filename start with '.'
+            if(param != "-a" && name[0] == '.') {
+                continue;
+            }
+
+            cout << setw(10) << name;
             cnt_per_line++;
             if (cnt_per_line == max_per_line) {
                 cnt_per_line = 0;
