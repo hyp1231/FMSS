@@ -49,17 +49,19 @@ bool exec_opt(FileSystem& S, vector<string>& opt) {
         case _delete:       // rm
             S.DeleteFile(opt[1]); break;
         case _list:         // ls
-            if (opt.size() > 1) {
+            if ((int)opt.size() > 2) {
                 cout << "Too many parameters in command \"ls\"" << endl;
                 S.Help();
-                break;
+            } else if((int)opt.size() == 2) {	// -a
+            	S.ListFile(opt[1]);
+            } else {					// none
+            	S.ListFile();
             }
-            S.ListFile(); break;
         case _mkdir:        // mkdir
             S.CreateDir(opt[1]); break;
         case _cd:           // cd
             S.OpenDir(opt[1]); break;
-		case undefined_opt:	// unknowned
+		    case undefined_opt:	// unknowned
 			cout << "Unknown option..." << endl; break;
 		default: break;
 	}
