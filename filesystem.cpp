@@ -98,7 +98,7 @@ string getTime() {
 }
 
 void PrintRed(const string& str) {
-    cout << "\033[31m" << str << "\033[0m";
+    cout << setw(10) << "\033[31m" << str << "\033[0m";
 }
 
 /*
@@ -982,6 +982,20 @@ bool FileSystem::MoveFile(string& S_filepath, string& D_filepath) {
 			ofile << file_data;
 			ofile.close();
 		} else {	// both inside
+            string filename;
+            int dir_inodeNum = Analysis_path(S_filepath, filename);
+            if(dir_inodeNum == -1) {
+                return false;
+            }
+            int file_inodeNum = Get_file_inodeNum_from_dir(dir_inodeNum, filename);
+            if(file_inodeNum == -1) {
+                return false;
+            }
+            if(isDir(file_inodeNum)) {
+                cout << "[Error] Source cannot be a directory" << endl;
+                return false;
+            }
+
 			// convert inside file to string
 			string file_data;
 			if(!Inside_file2str(S_filepath, file_data)) {
@@ -1041,6 +1055,19 @@ bool FileSystem::Inside_file2str(const string& filepath, string& str) {
 }
 
 bool FileSystem::PrintFile(const string& filepath) {
+    string filename;
+    int dir_inodeNum = Analysis_path(filepath, filename);
+    if(dir_inodeNum == -1) {
+        return false;
+    }
+    int file_inodeNum = Get_file_inodeNum_from_dir(dir_inodeNum, filename);
+    if(file_inodeNum == -1) {
+        return false;
+    }
+    if(isDir(file_inodeNum)) {
+        cout << "[Error] Target cannot be a directory" << endl;
+        return false;
+    }
 	string file_data;
 	Inside_file2str(filepath, file_data);
 	cout << file_data;
@@ -1048,6 +1075,20 @@ bool FileSystem::PrintFile(const string& filepath) {
 }
 
 bool FileSystem::WriteFile(string& str, const string& filepath) {
+    string filename;
+    int dir_inodeNum = Analysis_path(filepath, filename);
+    if(dir_inodeNum == -1) {
+        return false;
+    }
+    int file_inodeNum = Get_file_inodeNum_from_dir(dir_inodeNum, filename);
+    if(file_inodeNum == -1) {
+        return false;
+    }
+    if(isDir(file_inodeNum)) {
+        cout << "[Error] Target cannot be a directory" << endl;
+        return false;
+    }
+
     str2Inside_file(str, filepath);
     return true;
 }
