@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 #include <ctime>
+#include <fstream>
+#include <algorithm>
 #include "disk.h"
 using namespace std;
 
@@ -34,6 +36,12 @@ private:
     void Fill_data_block_bitmap(int blockNum, bool flag);
     void Save_superBLK();
     int FindEOF(char buf[]);
+    inline bool isOutside_path(const string& path);
+    bool Outside_file2str(ifstream& ifile, string& str);
+    bool Inside_file2str(const string& filepath, string& str);
+    bool str2Inside_file(string& file_data, const string& filepath);
+    int Analysis_path(const string& filepath, string& filename);
+    void PutInode(char buf[], int inodeNum);
 
 public:
 	FileSystem();
@@ -42,6 +50,8 @@ public:
     bool CreateFile(const string &filepath);
     bool DeleteFile(const string &filepath);
     void ListFile(const string param = "none");
+    bool MoveFile(string& S_filepath, string& D_filepath);
+    bool PrintFile(const string& filepath);
     int Get_cur_dir_inodeNum();
     void Print_cur_path();
 };

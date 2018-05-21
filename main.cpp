@@ -21,7 +21,7 @@
 using namespace std;
 
 enum enum_opts {
-	undefined_opt, _help, _exit, _create, _delete, _list
+	undefined_opt, _help, _exit, _create, _delete, _list, _move, _print
 };
 
 static map<string, enum_opts> string_to_enum;
@@ -57,6 +57,10 @@ bool exec_opt(FileSystem& S, vector<string>& opt) {
             	S.ListFile();
             }
             break;
+        case _move:
+        	S.MoveFile(opt[1], opt[2]); break;
+        case _print:
+        	S.PrintFile(opt[1]); break;
 		case undefined_opt:	// unknowned
 			cout << "Unknown option... ╮(￣▽￣"")╭" << endl; break;
 		default: break;
@@ -82,6 +86,8 @@ void initialization() {
     string_to_enum["touch"] = _create;
     string_to_enum["rm"] = _delete;
     string_to_enum["ls"] = _list;
+    string_to_enum["mv"] = _move;
+    string_to_enum["cat"] = _print;
 }
 
 int main() {
