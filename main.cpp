@@ -83,7 +83,7 @@ bool exec_opt(FileSystem& S, vector<string>& opt) {
             if ((int)opt.size() > 2) {
                 cout << "Too many parameters in command \"ls\"" << endl;
                 S.Help();
-            } else if((int)opt.size() == 2) {	// -a
+            } else if((int)opt.size() == 2) {	// -a or -l
             	S.ListFile(opt[1]);
             } else {					// none
             	S.ListFile();
