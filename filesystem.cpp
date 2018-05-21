@@ -144,6 +144,7 @@ void FileSystem::Help() {
 	cout << "[exit]:    exit the system" << endl;
     cout << "[touch]:   create file" << endl;
     cout << "[rm]:      delete file" << endl;
+    cout << "           [-r] to delete recursively" << endl;
     cout << "[ls]:      list files and directories in cur directory" << endl;
     cout << "           [-a] to show hidden files" << endl;
     cout << "[mkdir]:   create a new directory" << endl;
@@ -498,7 +499,7 @@ bool FileSystem::CreateFile(const string &filepath) {
 }
 
 // return false if cannot delete file
-bool FileSystem::DeleteFile(const string &filepath) {
+bool FileSystem::DeleteFile(const string &filepath, const string param) {
     /* 
         step 1: find the right directory
     */
@@ -540,6 +541,11 @@ bool FileSystem::DeleteFile(const string &filepath) {
         isFile = false;
 
     if (!isFile) {  // if it's dir, data should be deleted recursively
+        if(param != "-r") {
+            cout << "[Error] Cannot delete directory" << endl;
+            return false;
+        }
+
         char fileBLK[BLKsize];
         int dataNum = byte2int(file_buf, 42, 44);
         Fill_data_block_bitmap(dataNum, false);
