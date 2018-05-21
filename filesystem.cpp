@@ -150,10 +150,11 @@ void FileSystem::Help() {
     cout << "           [-l] to show detailed information of files" << endl;
     cout << "[mkdir]:   create a new directory" << endl;
     cout << "[cd]:      go to the aimed directory" << endl;
-    cout << "[mv]:      move file from inside/outside to inside/outside" << endl;
+    cout << "[mv]:      move file from inside to inside" << endl;
    	cout << "           path starting with ':' indicates outside path" << endl;
    	cout << "[cat]:     print file" << endl;
     cout << "[echo]:    write something into file" << endl;
+    cout << "[cp]:      copy file from inside/outside to inside/outside" << endl;
 	cout << "* ------------------------------------ *" << endl;
 }
 
@@ -930,58 +931,57 @@ bool FileSystem::str2Inside_file(string& file_data, const string& filepath) {
 	return true;
 }
 
-// move file from source to destination
-bool FileSystem::MoveFile(string& S_filepath, string& D_filepath) {
-	if(isOutside_path(S_filepath)) {		// souce is outside path
-		if(isOutside_path(D_filepath)) {	// both outside path
-			cout << "[Error] Cannot move an outside file to another outside place" << endl;
-			return false;
-		} else {	// move from outside to inside
-			/*
-				step 1: test if can open the outside file, and change file to string (attention length)
-			*/
+bool FileSystem::CopyFile(string& S_filepath, string& D_filepath) {
+    if(isOutside_path(S_filepath)) {        // souce is outside path
+        if(isOutside_path(D_filepath)) {    // both outside path
+            cout << "[Error] Cannot move an outside file to another outside place" << endl;
+            return false;
+        } else {    // move from outside to inside
+            /*
+                step 1: test if can open the outside file, and change file to string (attention length)
+            */
 
-			S_filepath = S_filepath.substr(1);
+            S_filepath = S_filepath.substr(1);
 
-			ifstream ifile(S_filepath);
-			if(!ifile) {	// cannot open
-				cout << "[Error] Illegal outside path:" << S_filepath << endl;
-				return false;
-			}
+            ifstream ifile(S_filepath);
+            if(!ifile) {    // cannot open
+                cout << "[Error] Illegal outside path:" << S_filepath << endl;
+                return false;
+            }
 
-			// store the data in outside file
-			string file_data;
+            // store the data in outside file
+            string file_data;
 
-			if(!Outside_file2str(ifile, file_data)) {
-				ifile.close();
-				return false;
-			}
+            if(!Outside_file2str(ifile, file_data)) {
+                ifile.close();
+                return false;
+            }
 
-			ifile.close();
+            ifile.close();
 
-			if(!str2Inside_file(file_data, D_filepath)) {
-				return false;
-			}
-		}
-	} else {		// souce is inside path
-		if(isOutside_path(D_filepath)) {	// move from inside to outside
-			D_filepath = D_filepath.substr(1);
+            if(!str2Inside_file(file_data, D_filepath)) {
+                return false;
+            }
+        }
+    } else {        // souce is inside path
+        if(isOutside_path(D_filepath)) {    // move from inside to outside
+            D_filepath = D_filepath.substr(1);
 
-			// convert inside file to string
-			string file_data;
-			if(!Inside_file2str(S_filepath, file_data)) {
-				return false;
-			}
+            // convert inside file to string
+            string file_data;
+            if(!Inside_file2str(S_filepath, file_data)) {
+                return false;
+            }
 
-			ofstream ofile(D_filepath);
-			if(!ofile) {
-				cout << "[Error] Cannot open file: " << D_filepath << endl;
-				return false;
-			}
+            ofstream ofile(D_filepath);
+            if(!ofile) {
+                cout << "[Error] Cannot open file: " << D_filepath << endl;
+                return false;
+            }
 
-			ofile << file_data;
-			ofile.close();
-		} else {	// both inside
+            ofile << file_data;
+            ofile.close();
+        } else {    // both inside
             string filename;
             int dir_inodeNum = Analysis_path(S_filepath, filename);
             if(dir_inodeNum == -1) {
@@ -996,15 +996,44 @@ bool FileSystem::MoveFile(string& S_filepath, string& D_filepath) {
                 return false;
             }
 
-			// convert inside file to string
-			string file_data;
-			if(!Inside_file2str(S_filepath, file_data)) {
-				return false;
-			}
+            // convert inside file to string
+            string file_data;
+            if(!Inside_file2str(S_filepath, file_data)) {
+                return false;
+            }
 
-			str2Inside_file(file_data, D_filepath);
-		}
+            str2Inside_file(file_data, D_filepath);
+        }
+    }
+
+    return true;
+}
+
+
+// move file from source to destination
+bool FileSystem::MoveFile(string& S_filepath, string& D_filepath) {
+    string filename;
+    int dir_inodeNum = Analysis_path(S_filepath, filename);
+    if(dir_inodeNum == -1) {
+        return false;
+    }
+    int file_inodeNum = Get_file_inodeNum_from_dir(dir_inodeNum, filename);
+    if(file_inodeNum == -1) {
+        return false;
+    }
+    if(isDir(file_inodeNum)) {
+        cout << "[Error] Source cannot be a directory" << endl;
+        return false;
+    }
+
+	// convert inside file to string
+	string file_data;
+	if(!Inside_file2str(S_filepath, file_data)) {
+		return false;
 	}
+
+	DeleteFile(S_filepath);
+    str2Inside_file(file_data, D_filepath);
 
 	return true;
 }

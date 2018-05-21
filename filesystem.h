@@ -57,5 +57,6 @@ public:
     bool WriteFile(string& str, const string& filepath);
     bool CreateDir(const string &filepath);
     void OpenDir(const string &dirpath);
+    bool CopyFile(string& S_filepath, string& D_filepath);
     void Print_cur_path();
 };
