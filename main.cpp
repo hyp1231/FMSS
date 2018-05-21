@@ -61,8 +61,13 @@ bool exec_opt(FileSystem& S, vector<string>& opt) {
         case _mkdir:        // mkdir
             S.CreateDir(opt[1]); break;
         case _cd:           // cd
+            if ((int)opt.size() < 2) {
+                cout << "Directory path should be provided" << endl;
+                cout << "cd [dirpath]" << endl;
+                break;
+            }
             S.OpenDir(opt[1]); break;
-		    case undefined_opt:	// unknowned
+		case undefined_opt:	// unknowned
 			cout << "Unknown option..." << endl; break;
 		default: break;
 	}

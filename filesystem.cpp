@@ -482,7 +482,7 @@ bool FileSystem::CreateFile(const string &filepath) {
         CreateInCurDir(dir_inodeNum, path[i], false);
     }
     if (!CreateInCurDir(dir_inodeNum, path[path.size() - 1], true)) {
-        // dir already exists
+        // file already exists
         cout << "[Error] " << filepath << " already exists!" << endl;
         return false;
     }
@@ -515,17 +515,12 @@ bool FileSystem::DeleteFile(const string &filepath) {
     }
     path.pop_back();
 
-    if((int)filename.size() > 8) {
-        cout << "[Error] filename is too long" << endl;
-        return false;
-    }
-
     if(filename == "." || filename == "..") {
         cout << "[Error] '.' or '..' cannot be removed" << endl;
         return false;
     }
 
-    if((int)path.size() >= 2) {
+    if((int)path.size() >= 1) {
         dir_inodeNum = Get_dir_inodeNum_from_path(path);
     } else {
         dir_inodeNum = cur_dir_inodeNum;    // omit path -> cur dir
@@ -593,12 +588,11 @@ void FileSystem::ListFile(const string param) {
 
     int cnt_per_line = 0;
     int max_per_line = 4;
-    // here is a bug: BLKsize = 0 ????
     for (int i = 0; i + 12 <= BLKsize; i += 12) {
         if (byte2int(dir_buf, i + 8, i + 10) != 0) {
             string name = byte2string(dir_buf, i, i + 8);
-            // if not show hidden files and filename start with '.'
-            if(param != "-a" && name[0] == '.') {
+            // if not show hidden files and filename "." or ".."
+            if(param != "-a" && (name == "." || name == "..")) {
                 continue;
             }
 
@@ -648,7 +642,7 @@ bool FileSystem::CreateDir(const string &filepath) {
     }
     if (!CreateInCurDir(dir_inodeNum, path[path.size() - 1], false)) {
         // dir already exists
-        cout << "[Error] " << filepath << " already exists!" << endl;
+        cout << "[Error] \"" << filepath << "\" already exists!" << endl;
         return false;
     }
     return true;
@@ -675,6 +669,12 @@ void FileSystem::OpenDir(const string &dirpath) {
     if((int)path.size() >= 2) {
         dirname = path[path.size() - 1];
     } else {
+        // if path is "/" (root directory), return
+        if (path[0] == "/" && path.size() == 1) {
+            cur_dir_inodeNum = root_dir_inodeNum;
+            cur_path = path;
+            return ;
+        }
         dirname = path[0]; // omit path
     }
     path.pop_back();
@@ -686,6 +686,7 @@ void FileSystem::OpenDir(const string &dirpath) {
     }
 
     if (dir_inodeNum == -1) {
+        cout << "print hahaha" <<endl;
         cout << "[Error] Directory \"" << dirpath << "\" doesn't exist!" << endl;
         return;
     }
@@ -716,19 +717,22 @@ void FileSystem::OpenDir(const string &dirpath) {
                 // the found file is a directory
                 //      modify cur_path
                 path.push_back(dirname);
+                // if path starts with '/', it's a complete path
                 if (path[0] == "/") {
-                    cur_path = path;
+                    cur_dir_inodeNum = root_dir_inodeNum;
+                    int cur_path_size = cur_path.size();
+                    for (int i = 0; i < cur_path_size - 1; i++)
+                        cur_path.pop_back();
+                    path.erase(path.begin());
                 }
-                else {
-                    for (int i = 0; i < (int)path.size(); i++) {
-                        if (path[i] == ".") continue;
-                        else if (path[i] == "..") {
-                            if (cur_dir_inodeNum != root_dir_inodeNum)
-                                cur_path.pop_back();
-                        }                            
-                        else
-                            cur_path.push_back(path[i]);
-                    }
+                for (int i = 0; i < (int)path.size(); i++) {
+                    if (path[i] == ".") continue;
+                    else if (path[i] == "..") {
+                        if (cur_dir_inodeNum != root_dir_inodeNum)
+                            cur_path.pop_back();
+                    }                            
+                    else
+                        cur_path.push_back(path[i]);
                 }
 
                 //      modify cur_dir_inodeNum
@@ -748,10 +752,10 @@ int FileSystem::Get_cur_dir_inodeNum() {
 }
 
 void FileSystem::Print_cur_path() {
-	for(int i = 0; i < (int)cur_path.size(); ++i) {
+    for(int i = 0; i < (int)cur_path.size(); ++i) {
         cout << cur_path[i];
-		if(i != 0 && i != (int)cur_path.size() - 1) {
-			cout << "/";
-		}
-	}
+        if(i != 0 && i != (int)cur_path.size() - 1) {
+            cout << "/";
+        }
+    }
 }
