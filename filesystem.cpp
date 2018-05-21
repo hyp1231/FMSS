@@ -611,13 +611,39 @@ void FileSystem::ListFile(const string param) {
         step 2: list all files in the dir
     */
 
+    if (param == "-l") {
+        cout << "Name      ";       // name
+        cout << "       ";          // <DIR>
+        cout << "     Create Time  "; // create_time
+        cout << "Last Modified Time"; // modify_time
+        cout << endl;
+    }
+
     int cnt_per_line = 0;
     int max_per_line = 4;
-    for (int i = 0; i + 12 <= BLKsize; i += 12) {
+    for (int i = 0; i + 12 < BLKsize; i += 12) {
         if (byte2int(dir_buf, i + 8, i + 10) != 0) {
             string name = byte2string(dir_buf, i, i + 8);
             // if not show hidden files and filename "." or ".."
-            if(param != "-a" && (name == "." || name == "..")) {
+            if((param != "-a" && param != "-l") && (name == "." || name == "..")) {
+                continue;
+            }
+            else if (param == "-l") {
+                char buf[64];
+                int file_inodeNum = byte2int(dir_buf, i + 10, i + 12);
+                Get_inode_from_inodeNum(buf, Get_actual_inodeBLKnumber(file_inodeNum));
+
+                string create_time = byte2string(buf, 10, 26);
+                string modify_time = byte2string(buf, 26, 42);
+                cout << std::left << setw(10) << name << std::right;
+                if (byte2int(buf, 0, 2) == 0)
+                    cout << "     " << "  ";
+                else
+                    cout << "<DIR>" << "  ";
+                cout << create_time << "    ";
+                cout << modify_time << "    ";
+                cout << endl;
+
                 continue;
             }
 
