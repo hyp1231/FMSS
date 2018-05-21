@@ -4,7 +4,6 @@
     --------------------- Tool Functions ---------------------
 */
 
-// untested
 // decide if bytes in buffer( buf[begin, end) ) equals to string(str)
 bool byteEQUstring(const string& str, char buf[], int begin, int end) {
     if (str.length() != end - begin)
@@ -20,7 +19,6 @@ bool byteEQUstring(char buf[], int begin, int end, const string& str) {
 	return byteEQUstring(str, buf, begin, end);
 }
 
-// untested
 // convert bytes( buf[begin, end) ) to int
 int byte2int(char buf[], int begin, int end) {
     if (end - begin > 4) {
