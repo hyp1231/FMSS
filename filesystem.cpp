@@ -147,6 +147,7 @@ void FileSystem::Help() {
     cout << "           [-r] to delete recursively" << endl;
     cout << "[ls]:      list files and directories in cur directory" << endl;
     cout << "           [-a] to show hidden files" << endl;
+    cout << "           [-l] to show detailed information of files" << endl;
     cout << "[mkdir]:   create a new directory" << endl;
     cout << "[cd]:      go to the aimed directory" << endl;
     cout << "[mv]:      move file from inside/outside to inside/outside" << endl;
