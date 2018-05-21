@@ -52,6 +52,6 @@ public:
     void ListFile(const string param = "none");
     bool MoveFile(string& S_filepath, string& D_filepath);
     bool PrintFile(const string& filepath);
-    int Get_cur_dir_inodeNum();
+    bool WriteFile(string& str, const string& filepath);
     void Print_cur_path();
 };

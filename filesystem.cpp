@@ -149,6 +149,7 @@ void FileSystem::Help() {
     cout << "[mv]:      move file from inside/outside to inside/outside" << endl;
    	cout << "           path starting with ':' indicates outside path" << endl;
    	cout << "[cat]:     print file" << endl;
+    cout << "[echo]:    write something into file" << endl;
 	cout << "* ------------------------------------ *" << endl;
 }
 
@@ -792,9 +793,9 @@ bool FileSystem::PrintFile(const string& filepath) {
 	return true;
 }
 
-
-int FileSystem::Get_cur_dir_inodeNum() {
-    return cur_dir_inodeNum;
+bool FileSystem::WriteFile(string& str, const string& filepath) {
+    str2Inside_file(str, filepath);
+    return true;
 }
 
 void FileSystem::Print_cur_path() {
