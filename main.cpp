@@ -86,7 +86,7 @@ bool exec_opt(FileSystem& S, vector<string>& opt) {
             break;
         case _list:         // ls
             if ((int)opt.size() > 2) {
-                cout << "Too many parameters in command \"ls\"" << endl;
+                cout << "[Error] Too many parameters in command \"ls\"" << endl;
                 S.Help();
             } else if((int)opt.size() == 2) {	// -a
             	S.ListFile(opt[1]);
@@ -94,23 +94,27 @@ bool exec_opt(FileSystem& S, vector<string>& opt) {
             	S.ListFile();
             } 
             break;
-        case _move:
+        case _move:			// mv
         	S.MoveFile(opt[1], opt[2]); break;
-        case _print:
+        case _print:		// cat
         	S.PrintFile(opt[1]); break;
-        case _write:
+        case _write:		// echo
+        	if(opt.size() != 4 || opt[2] != ">") {
+        		cout << "[Error] Illegal param" << endl;
+        		break;
+        	}
         	S.WriteFile(opt[1], opt[3]); break;
         case _mkdir:        // mkdir
             S.CreateDir(opt[1]); break;
         case _cd:           // cd
             if ((int)opt.size() < 2) {
-                cout << "Directory path should be provided" << endl;
+                cout << "[Error] Directory path should be provided" << endl;
                 cout << "cd [dirpath]" << endl;
                 break;
             }
             S.OpenDir(opt[1]); break;
 		case undefined_opt:	// unknowned
-			cout << "Unknown option..." << endl; break;
+			cout << "[Error] Unknown option" << endl; break;
 		default: break;
 	}
 	return flag;
