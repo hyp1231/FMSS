@@ -50,7 +50,7 @@ public:
 	~FileSystem();
 	void Help();
     bool CreateFile(const string &filepath);
-    bool DeleteFile(const string &filepath);
+    bool DeleteFile(const string &filepath, const string param = "none");
     void ListFile(const string param = "none");
     bool MoveFile(string& S_filepath, string& D_filepath);
     bool PrintFile(const string& filepath);

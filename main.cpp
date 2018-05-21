@@ -78,7 +78,12 @@ bool exec_opt(FileSystem& S, vector<string>& opt) {
         case _create:       // touch
             S.CreateFile(opt[1]); break;
         case _delete:       // rm
-            S.DeleteFile(opt[1]); break;
+        	if((int)opt.size() > 2) {
+        		S.DeleteFile(opt[2], opt[1]);
+        	} else {
+        		S.DeleteFile(opt[1]);
+        	}
+            break;
         case _list:         // ls
             if ((int)opt.size() > 2) {
                 cout << "Too many parameters in command \"ls\"" << endl;
