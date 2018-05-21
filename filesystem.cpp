@@ -144,6 +144,12 @@ void FileSystem::Help() {
     cout << "[rm]:      delete file" << endl;
     cout << "[ls]:      list files and directories in cur directory" << endl;
     cout << "           [-a] to show hidden files" << endl;
+    cout << "[mkdir]:   create a new directory" << endl;
+    cout << "[cd]:      go to the aimed directory" << endl;
+    cout << "[mv]:      move file from inside/outside to inside/outside" << endl;
+   	cout << "           path starting with ':' indicates outside path" << endl;
+   	cout << "[cat]:     print file" << endl;
+    cout << "[echo]:    write something into file" << endl;
 	cout << "* ------------------------------------ *" << endl;
 }
 
@@ -495,35 +501,15 @@ bool FileSystem::DeleteFile(const string &filepath) {
         step 1: find the right directory
     */
 
-    vector<string> path;
-    string filename;
-    int dir_inodeNum;
-    if(!Decomposition_path(filepath, path)) {
-        cout << "[Error] Illegal path!" << endl;
-        return false;
+	string filename;
+    int dir_inodeNum = Analysis_path(filepath, filename);
+    if(dir_inodeNum == -1) {
+    	return false;
     }
 
-    if(path.empty()) {
-        cout << "[Error] Empty path!" << endl;
-        return false;
-    }
-
-    if((int)path.size() >= 2) {
-        filename = path[path.size() - 1];
-    } else {
-        filename = path[0]; // omit path
-    }
-    path.pop_back();
-
-    if(filename == "." || filename == "..") {
+	if(filename == "." || filename == "..") {
         cout << "[Error] '.' or '..' cannot be removed" << endl;
         return false;
-    }
-
-    if((int)path.size() >= 1) {
-        dir_inodeNum = Get_dir_inodeNum_from_path(path);
-    } else {
-        dir_inodeNum = cur_dir_inodeNum;    // omit path -> cur dir
     }
 
     /*
@@ -609,6 +595,59 @@ void FileSystem::ListFile(const string param) {
     }
 }
 
+inline bool FileSystem::isOutside_path(const string& path) {
+	return path[0] == ':';
+}
+
+// store data in ifile to str
+// return false if too large
+bool FileSystem::Outside_file2str(ifstream& ifile, string& str) {
+	string tmp;
+	str.clear();	// start from empty
+	while(getline(ifile, tmp)) {
+		str += tmp + '\n';
+		if((int)str.length() > 8 * BLKsize) {
+			cout << "[Error] File is too large" << endl;
+			return false;
+		}
+	}
+	return true;
+}
+
+int FileSystem::Analysis_path(const string& filepath, string& filename) {
+	vector<string> path;
+    int dir_inodeNum;
+    if(!Decomposition_path(filepath, path)) {
+        cout << "[Error] Illegal path!" << endl;
+        return -1;
+    }
+
+    if(path.empty()) {
+        cout << "[Error] Empty path!" << endl;
+        return -1;
+    }
+
+    if((int)path.size() >= 2) {
+        filename = path[path.size() - 1];
+    } else {
+        filename = path[0]; // omit path
+    }
+    path.pop_back();
+    
+    if((int)filename.size() > 8) {
+    	cout << "[Error] filename is too long" << endl;
+    	return -1;
+    }
+
+    if((int)path.size() >= 1) {
+        dir_inodeNum = Get_dir_inodeNum_from_path(path);
+    } else {
+        dir_inodeNum = cur_dir_inodeNum;    // omit path -> cur dir
+    }
+
+    return dir_inodeNum;
+}
+  
 bool FileSystem::CreateDir(const string &filepath) {
     /* 
         step 1: find the right directory
@@ -684,9 +723,8 @@ void FileSystem::OpenDir(const string &dirpath) {
     } else {
         dir_inodeNum = cur_dir_inodeNum;    // omit path -> cur dir
     }
-
-    if (dir_inodeNum == -1) {
-        cout << "print hahaha" <<endl;
+  
+  if (dir_inodeNum == -1) {
         cout << "[Error] Directory \"" << dirpath << "\" doesn't exist!" << endl;
         return;
     }
@@ -747,8 +785,201 @@ void FileSystem::OpenDir(const string &dirpath) {
     return;
 }
 
-int FileSystem::Get_cur_dir_inodeNum() {
-    return cur_dir_inodeNum;
+// save inode
+void FileSystem::PutInode(char buf[], int inodeNum) {
+	char large_buf[BLKsize];
+	D.Getblk(large_buf, Get_actual_inodeBLKnumber(inodeNum));
+	int st = 64 * (inodeNum % 16);
+	for(int i = 0; i < 64; ++i) {
+		large_buf[i + st] = buf[i];
+	}
+	D.Putblk(large_buf, Get_actual_inodeBLKnumber(inodeNum));
+}
+
+bool FileSystem::str2Inside_file(string& file_data, const string& filepath) {
+	/* 
+        step 1: find the right directory
+    */
+
+	string filename;
+    int dir_inodeNum = Analysis_path(filepath, filename);
+    if(dir_inodeNum == -1) {
+    	return false;
+    }
+
+    /*
+        step 2: test if there is file having the same name
+    */
+
+    // exist file, delete to clear bitmap
+	if(Get_file_inodeNum_from_dir(dir_inodeNum, filename) != -1) {
+		if(!DeleteFile(filepath)) {
+			cout << "[Error] Cannot delete file " << filename;
+			return false;
+		}
+	}
+	CreateFile(filepath);
+	int file_inodeNum = Get_file_inodeNum_from_dir(dir_inodeNum, filename);
+
+	/*
+		step 3: allocate data blocks
+	*/
+
+	// EOF
+	int BLKnum = (file_data.length() + (file_data.length() != 8 * BLKsize)) / BLKsize;
+	char _EOF = -1;
+	if(file_data.length() != 8 * BLKsize) {
+		file_data += _EOF;
+	}
+
+	char buf[BLKsize], inode_buf[64];
+
+	// first BLK
+	Get_inode_from_inodeNum(inode_buf, file_inodeNum);
+	Fill_byte_by_str(buf, 0, min(1024, (int)file_data.length()), file_data);
+	file_data = file_data.substr(min(1024, (int)file_data.length()));
+	D.Putblk(buf, Get_actual_dataBLKnumber(byte2int(inode_buf, 42, 44)));
+
+	for(int i = 1; i < BLKnum; ++i) {
+		// find an empty data block
+		int next_dataBLKNum = Find_empty_dataBLKNum();
+		// set data block bitmap
+		Fill_data_block_bitmap(next_dataBLKNum, true);
+		// change inode.data_block_number
+		Fill_byte_by_num(inode_buf, 42 + 2 * i, 44 + 2 * i, next_dataBLKNum);
+		// write data
+		Fill_byte_by_str(buf, 0, min(1024, (int)file_data.length()), file_data);
+		// cut str
+		file_data = file_data.substr(min(1024, (int)file_data.length()));
+		D.Putblk(buf, Get_actual_dataBLKnumber(byte2int(inode_buf, 42 + 2 * i, 44 + 2 * i)));
+	}
+
+	PutInode(inode_buf, file_inodeNum);
+	Save_superBLK();
+
+	return true;
+}
+
+// move file from source to destination
+bool FileSystem::MoveFile(string& S_filepath, string& D_filepath) {
+	if(isOutside_path(S_filepath)) {		// souce is outside path
+		if(isOutside_path(D_filepath)) {	// both outside path
+			cout << "[Error] Cannot move an outside file to another outside place" << endl;
+			return false;
+		} else {	// move from outside to inside
+			/*
+				step 1: test if can open the outside file, and change file to string (attention length)
+			*/
+
+			S_filepath = S_filepath.substr(1);
+
+			ifstream ifile(S_filepath);
+			if(!ifile) {	// cannot open
+				cout << "[Error] Illegal outside path:" << S_filepath << endl;
+				return false;
+			}
+
+			// store the data in outside file
+			string file_data;
+
+			if(!Outside_file2str(ifile, file_data)) {
+				ifile.close();
+				return false;
+			}
+
+			ifile.close();
+
+			if(!str2Inside_file(file_data, D_filepath)) {
+				return false;
+			}
+		}
+	} else {		// souce is inside path
+		if(isOutside_path(D_filepath)) {	// move from inside to outside
+			D_filepath = D_filepath.substr(1);
+
+			// convert inside file to string
+			string file_data;
+			if(!Inside_file2str(S_filepath, file_data)) {
+				return false;
+			}
+
+			ofstream ofile(D_filepath);
+			if(!ofile) {
+				cout << "[Error] Cannot open file: " << D_filepath << endl;
+				return false;
+			}
+
+			ofile << file_data;
+			ofile.close();
+		} else {	// both inside
+			// convert inside file to string
+			string file_data;
+			if(!Inside_file2str(S_filepath, file_data)) {
+				return false;
+			}
+
+			str2Inside_file(file_data, D_filepath);
+		}
+	}
+
+	return true;
+}
+
+bool FileSystem::Inside_file2str(const string& filepath, string& str) {
+	/*
+		step 1: get dir inode number and filename
+	*/
+	string filename;
+	int dir_inodeNum = Analysis_path(filepath, filename);
+	if(dir_inodeNum == -1) {
+		return false;
+	}
+
+	/*
+		step 2: get file inode number and get the inode
+	*/
+
+	int file_inodeNum = Get_file_inodeNum_from_dir(dir_inodeNum, filename);
+	if(file_inodeNum == -1) {
+		return false;
+	}
+
+	char inode_buf[64];
+	Get_inode_from_inodeNum(inode_buf, file_inodeNum);
+
+	/*
+		step 3: travel each data block, add to string until find EOF
+	*/
+
+	str.clear();
+	char buf[BLKsize];
+	for(int i = 42; i < 58; i += 2) {
+		D.Getblk(buf, Get_actual_dataBLKnumber(byte2int(inode_buf, i, i + 2)));
+		int pos = FindEOF(buf);
+		if(pos == -1) {
+			for(int j = 0; j < BLKsize; ++j) {
+				str += buf[j];
+			}
+		} else {
+			for(int j = 0; j < pos; ++j) {
+				str += buf[j];
+			}
+			break;
+		}
+	}
+	return true;
+}
+
+bool FileSystem::PrintFile(const string& filepath) {
+	string file_data;
+	Inside_file2str(filepath, file_data);
+	cout << file_data;
+	return true;
+}
+
+bool FileSystem::WriteFile(string& str, const string& filepath) {
+    str2Inside_file(str, filepath);
+    return true;
 }
 
 void FileSystem::Print_cur_path() {
