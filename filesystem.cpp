@@ -140,21 +140,21 @@ FileSystem::~FileSystem() {
 
 void FileSystem::Help() {
 	cout << "* ------------------------------------ *" << endl;
-	cout << "[help]:    get help list" << endl;
-	cout << "[exit]:    exit the system" << endl;
-    cout << "[touch]:   create file" << endl;
+    cout << "[cd]:      go to the aimed directory" << endl;
+    cout << "[mv]:      move file from inside to inside" << endl;
+    cout << "[cp]:      copy file from inside/outside to inside/outside" << endl;
+    cout << "           path starting with ':' indicates outside path" << endl;
     cout << "[rm]:      delete file" << endl;
     cout << "           [-r] to delete recursively" << endl;
     cout << "[ls]:      list files and directories in cur directory" << endl;
     cout << "           [-a] to show hidden files" << endl;
     cout << "           [-l] to show detailed information of files" << endl;
-    cout << "[mkdir]:   create a new directory" << endl;
-    cout << "[cd]:      go to the aimed directory" << endl;
-    cout << "[mv]:      move file from inside to inside" << endl;
-   	cout << "           path starting with ':' indicates outside path" << endl;
-   	cout << "[cat]:     print file" << endl;
+    cout << "[cat]:     print file" << endl;
+	cout << "[help]:    get help list" << endl;
+	cout << "[exit]:    exit the system" << endl;
     cout << "[echo]:    write something into file" << endl;
-    cout << "[cp]:      copy file from inside/outside to inside/outside" << endl;
+    cout << "[touch]:   create file" << endl;
+    cout << "[mkdir]:   create a new directory" << endl;
 	cout << "* ------------------------------------ *" << endl;
 }
 
@@ -557,7 +557,7 @@ bool FileSystem::DeleteFile(const string &filepath, const string param) {
                 continue;
             string tmp_filename = byte2string(fileBLK, i, i + 8);
             // delete all files in dir recursively
-            DeleteFile(filepath + '/' + tmp_filename);
+            DeleteFile(filepath + '/' + tmp_filename, param);
         }
     } else {    // if it's a file, just delete data block one by one
         for (int i = 42; i < 58; i += 2) {
@@ -1091,6 +1091,7 @@ bool FileSystem::PrintFile(const string& filepath) {
     }
     int file_inodeNum = Get_file_inodeNum_from_dir(dir_inodeNum, filename);
     if(file_inodeNum == -1) {
+        cout << "[Error] Cannot find file: " << filename << endl;
         return false;
     }
     if(isDir(file_inodeNum)) {
@@ -1111,7 +1112,7 @@ bool FileSystem::WriteFile(string& str, const string& filepath) {
     }
     int file_inodeNum = Get_file_inodeNum_from_dir(dir_inodeNum, filename);
     if(file_inodeNum == -1) {
-        return false;
+        CreateFile(filepath);
     }
     if(isDir(file_inodeNum)) {
         cout << "[Error] Target cannot be a directory" << endl;
