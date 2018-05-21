@@ -557,7 +557,7 @@ bool FileSystem::DeleteFile(const string &filepath, const string param) {
                 continue;
             string tmp_filename = byte2string(fileBLK, i, i + 8);
             // delete all files in dir recursively
-            DeleteFile(filepath + '/' + tmp_filename);
+            DeleteFile(filepath + '/' + tmp_filename, param);
         }
     } else {    // if it's a file, just delete data block one by one
         for (int i = 42; i < 58; i += 2) {
