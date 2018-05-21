@@ -42,6 +42,7 @@ private:
     bool str2Inside_file(string& file_data, const string& filepath);
     int Analysis_path(const string& filepath, string& filename);
     void PutInode(char buf[], int inodeNum);
+    bool CreateInCurDir(int &dir_inodeNum, const string &dirname, bool isFile);
 
 public:
 	FileSystem();
@@ -53,5 +54,7 @@ public:
     bool MoveFile(string& S_filepath, string& D_filepath);
     bool PrintFile(const string& filepath);
     bool WriteFile(string& str, const string& filepath);
+    bool CreateDir(const string &filepath);
+    void OpenDir(const string &dirpath);
     void Print_cur_path();
 };

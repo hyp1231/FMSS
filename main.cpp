@@ -21,7 +21,7 @@
 using namespace std;
 
 enum enum_opts {
-	undefined_opt, _help, _exit, _create, _delete, _list, _move, _print, _write
+	undefined_opt, _help, _exit, _create, _delete, _list, _move, _print, _write, _mkdir, _cd
 };
 
 static map<string, enum_opts> string_to_enum;
@@ -87,7 +87,7 @@ bool exec_opt(FileSystem& S, vector<string>& opt) {
             	S.ListFile(opt[1]);
             } else {					// none
             	S.ListFile();
-            }
+            } 
             break;
         case _move:
         	S.MoveFile(opt[1], opt[2]); break;
@@ -95,8 +95,17 @@ bool exec_opt(FileSystem& S, vector<string>& opt) {
         	S.PrintFile(opt[1]); break;
         case _write:
         	S.WriteFile(opt[1], opt[3]); break;
+        case _mkdir:        // mkdir
+            S.CreateDir(opt[1]); break;
+        case _cd:           // cd
+            if ((int)opt.size() < 2) {
+                cout << "Directory path should be provided" << endl;
+                cout << "cd [dirpath]" << endl;
+                break;
+            }
+            S.OpenDir(opt[1]); break;
 		case undefined_opt:	// unknowned
-			cout << "Unknown option... ╮(￣▽￣"")╭" << endl; break;
+			cout << "Unknown option..." << endl; break;
 		default: break;
 	}
 	return flag;
@@ -123,6 +132,8 @@ void initialization() {
     string_to_enum["mv"] = _move;
     string_to_enum["cat"] = _print;
     string_to_enum["echo"] = _write;
+    string_to_enum["mkdir"] = _mkdir;
+    string_to_enum["cd"] = _cd;
 }
 
 int main() {
