@@ -512,11 +512,9 @@ bool FileSystem::DeleteFile(const string &filepath) {
 
     /*
         step 2: make sure file exists; otherwise, return FALSE
-        step 3: modify dir's data block to remove this file's inode
-        (set valid to 0x0)
     */
 
-    int file_inodeNum = Get_file_inodeNum_from_dir(dir_inodeNum, filename, true);
+    int file_inodeNum = Get_file_inodeNum_from_dir(dir_inodeNum, filename, false);
     if (file_inodeNum == -1) {
         cout << "[Error] File doesn't exist (cannot delete file \""
         << filename << "\")" << endl;
@@ -524,21 +522,48 @@ bool FileSystem::DeleteFile(const string &filepath) {
     }
 
     /*
-        step 4: delete data in file's data_BLK
+        step 3: delete data in file's data_BLK
         (set corresponding bit in data bitmap to 0)
     */
 
+    bool isFile;
     char file_buf[64];
     Get_inode_from_inodeNum(file_buf, file_inodeNum);
-    for (int i = 42; i < 58; i += 2) {
+    // judge if inode is a file_inode
+    if (byte2int(file_buf, 0, 2) == 0)
+        isFile = true;
+    else 
+        isFile = false;
+
+    if (!isFile) {  // if it's dir, data should be deleted recursively
         char fileBLK[BLKsize];
-        int dataNum = byte2int(file_buf, i, i + 2);
+        int dataNum = byte2int(file_buf, 42, 44);
         Fill_data_block_bitmap(dataNum, false);
-        // if EOF, break
         D.Getblk(fileBLK, Get_actual_dataBLKnumber(dataNum));
-        if (FindEOF(fileBLK) != -1)
-            break;
+        for (int i = 24; i + 12 < BLKsize; i += 12) {
+            if (byte2int(fileBLK, i + 8, i + 10) == 0) 
+                continue;
+            string tmp_filename = byte2string(fileBLK, i, i + 8);
+            // delete all files in dir recursively
+            DeleteFile(filepath + '/' + tmp_filename);
+        }
+    } else {    // if it's a file, just delete data block one by one
+        for (int i = 42; i < 58; i += 2) {
+            char fileBLK[BLKsize];
+            int dataNum = byte2int(file_buf, i, i + 2);
+            Fill_data_block_bitmap(dataNum, false);
+            // if EOF, break
+            D.Getblk(fileBLK, Get_actual_dataBLKnumber(dataNum));
+            if (FindEOF(fileBLK) != -1)
+                break;
+        }
     }
+
+    /*
+        step 4: modify dir's data block to remove this file's inode
+        (set valid to 0x0)
+     */
+    Get_file_inodeNum_from_dir(dir_inodeNum, filename, true);
 
     /*
         step 5: remove file's inode
@@ -736,7 +761,7 @@ void FileSystem::OpenDir(const string &dirpath) {
     // get dir data block
     D.Getblk(dir_buf, Get_actual_dataBLKnumber(byte2int(inode_buf, 42, 44)));
 
-    for (int i = 0; i < BLKsize; i += 12) {
+    for (int i = 0; i + 12 < BLKsize; i += 12) {
         if (byte2int(dir_buf, i + 8, i + 10) != 0) {
             // find file that has "dirname" in dir_buf
             if (byte2string(dir_buf, i, i + 8) == dirname) {
