@@ -99,6 +99,10 @@ string getTime() {
     return tmp;
 }
 
+void PrintRed(const string& str) {
+    cout << "\033[31m" << str << "\033[0m";
+}
+
 /*
     ------------------- End of Tool Functions -----------------
 */
@@ -558,6 +562,12 @@ bool FileSystem::DeleteFile(const string &filepath) {
     return true;
 }
 
+bool FileSystem::isDir(int inodeNum) {
+    char buf[64];
+    Get_inode_from_inodeNum(buf, inodeNum);
+    return byte2int(buf, 0, 2) == 1;
+}
+
 void FileSystem::ListFile(const string param) {
     /* 
         step 1: get current dir block
@@ -582,7 +592,11 @@ void FileSystem::ListFile(const string param) {
                 continue;
             }
 
-            cout << setw(10) << name;
+            if(isDir(byte2int(dir_buf, i + 10, i + 12))) {
+                PrintRed(name);
+            } else {
+                cout << setw(10) << name;
+            }
             cnt_per_line++;
             if (cnt_per_line == max_per_line) {
                 cnt_per_line = 0;
@@ -724,7 +738,7 @@ void FileSystem::OpenDir(const string &dirpath) {
         dir_inodeNum = cur_dir_inodeNum;    // omit path -> cur dir
     }
   
-  if (dir_inodeNum == -1) {
+    if (dir_inodeNum == -1) {
         cout << "[Error] Directory \"" << dirpath << "\" doesn't exist!" << endl;
         return;
     }

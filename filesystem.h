@@ -43,6 +43,7 @@ private:
     int Analysis_path(const string& filepath, string& filename);
     void PutInode(char buf[], int inodeNum);
     bool CreateInCurDir(int &dir_inodeNum, const string &dirname, bool isFile);
+    bool isDir(int inodeNum);
 
 public:
 	FileSystem();
